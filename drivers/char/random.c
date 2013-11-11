@@ -654,13 +654,12 @@ retry:
 	if (cmpxchg(&r->entropy_count, orig, entropy_count) != orig)
 		goto retry;
 
-	r->entropy_total += nbits;
 	if (!r->initialized && nbits > 0) {
+		r->entropy_total += nbits;
 		if (r->entropy_total > 128) {
-			if (r == &nonblocking_pool)
-				pr_notice("random: %s pool is initialized\n",
-					  r->name);
 			r->initialized = 1;
+			if (r == &nonblocking_pool)
+				prandom_reseed_late();
 			r->entropy_total = 0;
 		}
 	}
