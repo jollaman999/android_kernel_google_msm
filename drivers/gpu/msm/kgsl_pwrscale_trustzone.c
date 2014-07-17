@@ -246,8 +246,6 @@ static void tz_idle(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
     val = __secure_tz_entry(TZ_UPDATE_ID, idle, device->id);
 #endif
 	if ((pwr->constraint.type == KGSL_CONSTRAINT_NONE) ||
-			((pwr->active_pwrlevel + val) <
-			pwr->constraint.hint.pwrlevel.level) ||
 			(time_after(jiffies, pwr->constraint.expires))) {
 
         kgsl_pwrctrl_pwrlevel_change(device,
