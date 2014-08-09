@@ -1163,6 +1163,55 @@ out:
 	return ERR_PTR(error);
 }
 
+/*
+ * This is an internal function, please use sb_end_{write,pagefault,intwrite}
+ * instead.
+ */
+void __sb_end_write(struct super_block *sb, int level)
+{
+	percpu_counter_dec(&sb->s_writers.counter[level-1]);
+	/*
+	 * Make sure s_writers are updated before we wake up waiters in
+	 * freeze_super().
+	 */
+	smp_mb();
+	if (waitqueue_active(&sb->s_writers.wait))
+		wake_up(&sb->s_writers.wait);
+	rwsem_release(&sb->s_writers.lock_map[level-1], 1, _RET_IP_);
+}
+EXPORT_SYMBOL(__sb_end_write);
+
+/*
+ * This is an internal function, please use sb_start_{write,pagefault,intwrite}
+ * instead.
+ */
+int __sb_start_write(struct super_block *sb, int level, bool wait)
+{
+retry:
+	if (unlikely(sb->s_writers.frozen >= level)) {
+		if (!wait)
+			return 0;
+		wait_event(sb->s_writers.wait_unfrozen,
+			   sb->s_writers.frozen < level);
+	}
+
+#ifdef CONFIG_LOCKDEP
+	acquire_freeze_lock(sb, level, !wait, _RET_IP_);
+#endif
+	percpu_counter_inc(&sb->s_writers.counter[level-1]);
+	/*
+	 * Make sure counter is updated before we check for frozen.
+	 * freeze_super() first sets frozen and then checks the counter.
+	 */
+	smp_mb();
+	if (unlikely(sb->s_writers.frozen >= level)) {
+		__sb_end_write(sb, level);
+		goto retry;
+	}
+	return 1;
+}
+EXPORT_SYMBOL(__sb_start_write);
+
 /**
  * freeze_super - lock the filesystem and force it into a consistent state
  * @sb: the super to lock
