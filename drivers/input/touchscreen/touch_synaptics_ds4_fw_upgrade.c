@@ -31,12 +31,11 @@
 #include <linux/interrupt.h>
 #include <linux/io.h>
 #include <linux/platform_device.h>
-#include <mach/gpio.h>
+#include <linux/gpio.h>
 #include <linux/slab.h>
 #include <linux/jiffies.h>
 #include <linux/syscalls.h>
 #include <linux/uaccess.h>
-#include <linux/earlysuspend.h>
 #include <linux/input/lge_touch_core.h>
 #include <linux/input/touch_synaptics.h>
 
@@ -75,25 +74,24 @@ unsigned char *SynaconfigImgData;
 unsigned char *SynalockImgData;
 unsigned int SynafirmwareImgVersion;
 
-//unsigned char ConfigBlock[];
-//unsigned char FirmwareImage[16000];  // make smaller and dynamic
-//unsigned char ConfigImage[16000];  // make smaller and dynamic
-
+#ifdef CUST_G_TOUCH
 unsigned char *my_image_bin;
 unsigned long my_image_size;
-u8 fw_image_config_id[5];
+u8	fw_image_product_id[7];
+u8	fw_image_config_id[5];
+#endif
 
-void CompleteReflash(struct synaptics_ts_data *ts);
-void ConfigBlockReflash(struct synaptics_ts_data *ts);
-void CompleteReflash_Lockdown(struct synaptics_ts_data *ts);
+int CompleteReflash(struct synaptics_ts_data *ts);
+int ConfigBlockReflash(struct synaptics_ts_data *ts);
+int CompleteReflash_Lockdown(struct synaptics_ts_data *ts);
 void SynaInitialize(struct synaptics_ts_data *ts);
 void SynaReadConfigInfo(struct synaptics_ts_data *ts);
 void SynaReadFirmwareInfo(struct synaptics_ts_data *ts);
-void SynaEnableFlashing(struct synaptics_ts_data *ts);
-void SynaProgramFirmware(struct synaptics_ts_data *ts);
-void SynaProgramConfiguration(struct synaptics_ts_data *ts);
-void SynaFinalizeReflash(struct synaptics_ts_data *ts);
-void SynaWaitForATTN(int time);
+int SynaEnableFlashing(struct synaptics_ts_data *ts);
+int SynaProgramFirmware(struct synaptics_ts_data *ts);
+int SynaProgramConfiguration(struct synaptics_ts_data *ts);
+int SynaFinalizeReflash(struct synaptics_ts_data *ts);
+int SynaWaitForATTN(int time, struct synaptics_ts_data *ts);
 //void waitATTN(void);
 
 //called from .c//////////////// start
@@ -147,18 +145,50 @@ int FirmwareUpgrade(struct synaptics_ts_data *ts, const char* fw_path){
 							read_bytes, fw_path);
 
 	} else {
-		my_image_size = ts->fw_info->fw_size-1;
-		my_image_bin = (unsigned char *)(&ts->fw_info->fw_start[0]);
+#ifdef CUST_G_TOUCH
+		my_image_size = ts->fw_info.fw_size-1;
+		my_image_bin = (unsigned char *)(&ts->fw_info.fw_start[0]);
+#endif
 	}
 
+#ifdef CUST_G_TOUCH
 	strncpy(fw_image_config_id, &my_image_bin[0xb100], 4);
+	//if firmware version is less than E046(TM2000), E002(TM2372), product id is null
+	strncpy(fw_image_product_id, &my_image_bin[0x0040], 6);	
+	TOUCH_INFO_MSG("fw_image_confid_id = %s, fw_image_product_id=%s\n", fw_image_config_id, fw_image_product_id);
 
-	TOUCH_INFO_MSG("fw_image_confid_id = %s\n", fw_image_config_id);
+	switch( ts->ic_panel_type ) {
+		case G_IC7020_G2_LGIT:		/* G */
+		case G_IC7020_G2_TPK:		/* G */
+		case GJ_IC7020_GFF_H_PTN: 	/* GJ */
+		case GV_IC7020_G2_H_PTN: 	/* GV */
+		case GK_IC7020_G1F: 		/* GK */
+		case GK_IC7020_GFF_SUNTEL:	/* GK */
+		case GK_IC7020_GFF_LGIT:	/* GK */
+			if(!strcmp(ts->fw_info.product_id, fw_image_product_id)) {
+				TOUCH_INFO_MSG("TOUCH FIRMWARE UPGRADE ts->ic_panel_type=%d\n", ts->ic_panel_type);
+			} else {
+				TOUCH_ERR_MSG("TOUCH FIRMWARE PRODUCT ID MISMATCH\n");
+				ret = -1;
+				goto fw_version_mismatch;
+			}
+			break;
+		default:
+			TOUCH_ERR_MSG("DO NOT EXECUTE FW UPDATE\n");
+			ret = -1;
+			goto fw_version_mismatch;
+			break;
+	}
+#endif
 
 	//CompleteReflash(ts);
-	CompleteReflash_Lockdown(ts);
+	ret = CompleteReflash_Lockdown(ts);
+	if(ret < 0) {
+		TOUCH_ERR_MSG("CompleteReflash_Lockdown fail\n");
+	}
 
-	if (unlikely(fw_path[0] != 0))
+fw_version_mismatch:
+	if(unlikely(fw_path[0] != 0))
 		kfree(my_image_bin);
 
 fw_mem_alloc_fail:
@@ -355,40 +385,59 @@ void SynaWriteBootloadID(struct synaptics_ts_data *ts)
 
 /* SynaWaitForATTN waits for ATTN to be asserted within a certain time threshold.
  */
-void SynaWaitForATTN(int time)
+int SynaWaitForATTN(int time, struct synaptics_ts_data *ts)
 {
+	int trial_us=0;
 	//unsigned int error;
 
 	//error = waitATTN(1, time);
 	//waitATTN(time);
-	mdelay(time);
+	while ((gpio_get_value(ts->pdata->int_pin) != 0) && (trial_us < (time * 1000))) {
+		//usleep(1);
+		udelay(1);
+		trial_us++;
+	}
+	//mdelay(time);
+
+	if (gpio_get_value(ts->pdata->int_pin) != 0)
+		return -EBUSY;
+	else
+		return 0;
 }
 
 /* SynaWaitATTN waits for ATTN to be asserted within a certain time threshold.
  * The function also checks for the F34 "Program Enabled" bit and clear ATTN accordingly.
  */
-void SynaWaitATTN(struct synaptics_ts_data *ts)
+int SynaWaitATTN(struct synaptics_ts_data *ts)
 {
+	int ret;
 	unsigned char uData;
 	unsigned char uStatus;
 //	unsigned char temp;
 
 	//wait ATTN line until it goes low by 300ms
 //	temp = SynaWaitForATTN(300);
-	SynaWaitForATTN(10);
+	ret = SynaWaitForATTN(500, ts);
+	if (ret < 0) {
+		TOUCH_ERR_MSG("SynaWaitForATTN 500ms timeout error\n");
+		return ret;
+	}
 
 	do {
  		readRMI(ts->client, SynaF34_FlashControl, &uData, 1);
 		readRMI(ts->client, (SynaF01DataBase + 1), &uStatus, 1);
 	} while (uData!= 0x80);
+
+	return 0;
 }
 
 
 
 /* SynaEnableFlashing kicks off the reflash process
  */
-void SynaEnableFlashing(struct synaptics_ts_data *ts)
+int SynaEnableFlashing(struct synaptics_ts_data *ts)
 {
+	int ret;
 	unsigned char uData;
 	unsigned char uStatus;
 	TOUCH_INFO_MSG("%s", __FUNCTION__);
@@ -412,7 +461,11 @@ void SynaEnableFlashing(struct synaptics_ts_data *ts)
 		// Wait for ATTN and then clear the ATTN.
 		uData = 0x0f;
 		writeRMI(ts->client, SynaF34_FlashControl, &uData, 1);
-		SynaWaitForATTN(100);
+		ret = SynaWaitForATTN(100, ts);
+		if (ret < 0) {
+			TOUCH_ERR_MSG("SynaWaitForATTN 100ms timeout error\n");
+			return ret;
+		}
 		readRMI(ts->client, (SynaF01DataBase + 1), &uStatus, 1);
 		// Scan the PDT again to ensure all register offsets are correct
 		SynaSetup(ts);
@@ -426,11 +479,12 @@ void SynaEnableFlashing(struct synaptics_ts_data *ts)
 		} while (uData != 0x80);
 	}
 
+	return 0;
 }
 
 /* SynaProgramConfiguration writes the configuration section of the image block by block
  */
-void SynaProgramConfiguration(struct synaptics_ts_data *ts)
+int SynaProgramConfiguration(struct synaptics_ts_data *ts)
 {
 	unsigned char uData[2];
 	//unsigned char *puData = ConfigBlockData;
@@ -443,7 +497,8 @@ void SynaProgramConfiguration(struct synaptics_ts_data *ts)
 
 	TOUCH_INFO_MSG("\nProgram Configuration Section...");
 
-	for (blockNum = 0; blockNum < SynaConfigBlockCount; blockNum++) {
+	for (blockNum = 0; blockNum < SynaConfigBlockCount; blockNum++)
+	{
 		uData[0] = blockNum & 0xff;
 		uData[1] = (blockNum & 0xff00) >> 8;
 
@@ -455,15 +510,17 @@ void SynaProgramConfiguration(struct synaptics_ts_data *ts)
 		// Issue the "Write Configuration Block" command
 		uData[0] = 0x06;
 		writeRMI(ts->client, SynaF34_FlashControl, &uData[0], 1);
-		SynaWaitATTN(ts);
+		if(SynaWaitATTN(ts) < 0) return -1;
 		TOUCH_INFO_MSG(".");
 	}
+	return 0;
 }
 
 /* SynaFinalizeReflash finalizes the reflash process
  */
-void SynaFinalizeReflash(struct synaptics_ts_data *ts)
+int SynaFinalizeReflash(struct synaptics_ts_data *ts)
 {
+	int ret;
 	unsigned char uData;
 	unsigned char uStatus;
 	TOUCH_INFO_MSG("%s", __FUNCTION__);
@@ -475,7 +532,11 @@ void SynaFinalizeReflash(struct synaptics_ts_data *ts)
 	uData = 1;
 	writeRMI(ts->client, SynaF01CommandBase, &uData, 1);
 
-	SynaWaitForATTN(100);
+	ret = SynaWaitForATTN(100, ts);
+	if (ret < 0) {
+		TOUCH_ERR_MSG("SynaWaitForATTN 100ms timeout error\n");
+		return ret;
+	}
 	readRMI(ts->client, SynaF01DataBase, &uData, 1);
 
 	// Sanity check that the reflash process is still enabled
@@ -497,11 +558,13 @@ void SynaFinalizeReflash(struct synaptics_ts_data *ts)
 	SynaSetup(ts);
 
 	TOUCH_INFO_MSG("\nReflash Completed. Please reboot.");
+
+	return 0;
 }
 
 /* SynaFlashFirmwareWrite writes the firmware section of the image block by block
  */
-void SynaFlashFirmwareWrite(struct synaptics_ts_data *ts)
+int SynaFlashFirmwareWrite(struct synaptics_ts_data *ts)
 {
 	//unsigned char *puFirmwareData = SynafirmwareImgData;
 	//unsigned char *puFirmwareData = (unsigned char *)&SynaFirmware[0x100];
@@ -527,15 +590,16 @@ void SynaFlashFirmwareWrite(struct synaptics_ts_data *ts)
 		uData[0] = 2;
 		writeRMI(ts->client, SynaF34_FlashControl, &uData[0], 1);
 
-		SynaWaitATTN(ts);
+		if(SynaWaitATTN(ts) < 0) return -1;
 	}
-
+	return 0;
 }
 
 /* SynaProgramFirmware prepares the firmware writing process
  */
-void SynaProgramFirmware(struct synaptics_ts_data *ts)
+int SynaProgramFirmware(struct synaptics_ts_data *ts)
 {
+	int ret;
 	unsigned char uData;
 	TOUCH_INFO_MSG("%s", __FUNCTION__);
 
@@ -552,13 +616,19 @@ void SynaProgramFirmware(struct synaptics_ts_data *ts)
 
 	SynaWaitATTN(ts);
 
-	SynaFlashFirmwareWrite(ts);
+	ret = SynaFlashFirmwareWrite(ts);
+	if(ret < 0){
+		TOUCH_ERR_MSG("SynaFlashFirmwareWrite fail\n");
+		return ret;
+	}
+
+	return 0;
 }
 
 
 /* eraseConfigBlock erases the config block
 */
-void eraseConfigBlock(struct synaptics_ts_data *ts)
+int eraseConfigBlock(struct synaptics_ts_data *ts)
 {
 	unsigned char uData;
 	TOUCH_INFO_MSG("%s", __FUNCTION__);
@@ -571,7 +641,9 @@ void eraseConfigBlock(struct synaptics_ts_data *ts)
 	uData = 7;
 	writeRMI(ts->client, SynaF34_FlashControl, &uData, 1);
 
-	SynaWaitATTN(ts);
+	if(SynaWaitATTN(ts) < 0) return -1;
+
+	return 0;
 }
 
 #if 0
@@ -613,8 +685,9 @@ void CRC_Calculate(unsigned short * data, unsigned short len)
 }
 
 
-void SynaBootloaderLock(struct synaptics_ts_data *ts)
+int SynaBootloaderLock(struct synaptics_ts_data *ts)
 {
+	int ret;
 	unsigned short lockBlockCount;
 	unsigned char *puFirmwareData = SynalockImgData;
 	unsigned char uData[2];
@@ -668,25 +741,31 @@ void SynaBootloaderLock(struct synaptics_ts_data *ts)
 			writeRMI(ts->client, SynaF34_FlashControl, &uData[0], 1);
 
 			/* Wait ATTN until device is done writing the block and is ready for the next. */
-			SynaWaitATTN(ts);
+			if(SynaWaitATTN(ts) < 0) return -1;
 		}
 		TOUCH_INFO_MSG("Device locking done.\n");
 
 		// Enable reflash again to finish the lockdown process.
 		// Since this lockdown process is part of the reflash process, we are enabling
 		// reflash instead, rather than resetting the device to finish the unlock procedure.
-		SynaEnableFlashing(ts);
-	} else {
-		TOUCH_INFO_MSG("Device already locked.\n");
+		ret = SynaEnableFlashing(ts);
+		if(ret < 0) {
+			TOUCH_ERR_MSG("SynaEnableFlashing fail\n");
+			return ret;
+		}
 	}
+	else TOUCH_INFO_MSG("Device already locked.\n");
+
+	return 0;
 }
 
 
 
 /* ConfigBlockReflash reflashes the config block only
 */
-void ConfigBlockReflash(struct synaptics_ts_data *ts)
+int ConfigBlockReflash(struct synaptics_ts_data *ts)
 {
+	int ret;
 	unsigned char uData[2];
 	TOUCH_INFO_MSG("%s", __FUNCTION__);
 
@@ -699,30 +778,54 @@ void ConfigBlockReflash(struct synaptics_ts_data *ts)
 
 	SynaF34_FlashControl = SynaF34DataBase + SynaFirmwareBlockSize + 2;
 
-	SynaEnableFlashing(ts);
+	ret = SynaEnableFlashing(ts);
+	if(ret < 0) {
+		TOUCH_ERR_MSG("SynaEnableFlashing fail\n");
+		return ret;
+	}
 
-       // Check if device is in unlocked state
+	// Check if device is in unlocked state
 	readRMI(ts->client, (SynaF34QueryBase + 2), &uData[0], 1);
 
 	//Device is unlocked
-	if (uData[0] & 0x02) {
-	   SynaFinalizeReflash(ts);
-	   return;
+	if (uData[0] & 0x02)
+	{ 
+	   ret = SynaFinalizeReflash(ts);
+	   if(ret < 0) {
+			TOUCH_ERR_MSG("SynaFinalizeReflash fail\n");
+			return ret;
+	   }
+	   return 0;
 	   // Do not reflash config block if not locked.
 	}
 
-	eraseConfigBlock(ts);
+	ret = eraseConfigBlock(ts);
+	if(ret < 0) {
+		TOUCH_ERR_MSG("eraseConfigBlock fail\n");
+		return ret;
+	}
 	//SynaconfigImgData = (unsigned char *)ConfigBlockData;
 
-	SynaProgramConfiguration(ts);
+	ret = SynaProgramConfiguration(ts);
+	if(ret < 0) {
+		TOUCH_ERR_MSG("SynaProgramConfiguration fail\n");
+		return ret;
+	}
 
-	SynaFinalizeReflash(ts);
+	ret = SynaFinalizeReflash(ts);
+	if(ret < 0) {
+		TOUCH_ERR_MSG("SynaFinalizeReflash fail\n");
+		return ret;
+	}
+
+	return 0;
 }
 
 /* CompleteReflash reflashes the entire user image, including the configuration block and firmware
 */
-void CompleteReflash(struct synaptics_ts_data *ts)
+int CompleteReflash(struct synaptics_ts_data *ts)
 {
+	int ret;
 	TOUCH_INFO_MSG("%s", __FUNCTION__);
 	SynaInitialize(ts);
 
@@ -731,18 +834,37 @@ void CompleteReflash(struct synaptics_ts_data *ts)
 	SynaReadFirmwareInfo(ts);
 
 	SynaF34_FlashControl = SynaF34DataBase + SynaFirmwareBlockSize + 2;
+    
+	ret = SynaEnableFlashing(ts);
+	if(ret < 0) {
+		TOUCH_ERR_MSG("SynaEnableFlashing fail\n");
+		return ret;
+	}
 
-	SynaEnableFlashing(ts);
+	ret = SynaProgramFirmware(ts);
+	if(ret < 0) {
+		TOUCH_ERR_MSG("SynaProgramFirmware fail\n");
+		return ret;
+	}
 
-	SynaProgramFirmware(ts);
+	ret = SynaProgramConfiguration(ts);
+	if(ret < 0) {
+		TOUCH_ERR_MSG("SynaProgramConfiguration fail\n");
+		return ret;
+	}
 
-	SynaProgramConfiguration(ts);
+	ret = SynaFinalizeReflash(ts);
+	if(ret < 0) {
+		TOUCH_ERR_MSG("SynaFinalizeReflash fail\n");
+		return ret;
+	}
 
-	SynaFinalizeReflash(ts);
+	return 0;
 }
 
-void CompleteReflash_Lockdown(struct synaptics_ts_data *ts)
+int CompleteReflash_Lockdown(struct synaptics_ts_data *ts)
 {
+	int ret;
 	TOUCH_INFO_MSG("%s", __FUNCTION__);
 
 	SynaInitialize(ts);
@@ -753,15 +875,35 @@ void CompleteReflash_Lockdown(struct synaptics_ts_data *ts)
 
 	SynaF34_FlashControl = SynaF34DataBase + SynaFirmwareBlockSize + 2;
 
-	SynaEnableFlashing(ts);
+	ret = SynaEnableFlashing(ts);
+	if(ret < 0) {
+		TOUCH_ERR_MSG("SynaEnableFlashing fail\n");
+		return ret;
+	}
 
-	SynaBootloaderLock(ts);
+	ret = SynaBootloaderLock(ts);
+	if(ret < 0) {
+		TOUCH_ERR_MSG("SynaBootloaderLock fail\n");
+		return ret;
+	}
 
-	SynaProgramFirmware(ts);
+	ret = SynaProgramFirmware(ts);
+	if(ret < 0) {
+		TOUCH_ERR_MSG("SynaProgramFirmware fail\n");
+		return ret;
+	}
 
-	SynaProgramConfiguration(ts);
+	ret = SynaProgramConfiguration(ts);
+	if(ret < 0) {
+		TOUCH_ERR_MSG("SynaProgramConfiguration fail\n");
+		return ret;
+	}
 
-	SynaFinalizeReflash(ts);
+	ret = SynaFinalizeReflash(ts);
+	if(ret < 0) {
+		TOUCH_ERR_MSG("SynaFinalizeReflash fail\n");
+		return ret;
+	}
+
+	return 0;
 }
-
-
