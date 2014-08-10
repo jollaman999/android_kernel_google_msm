@@ -1645,6 +1645,12 @@ config GPU_OVERCLOCK
 	help
 	  Enable Adreno GPU Overclock
 
+config MSM_SLEEPER
+	bool "Limit max frequency and shut off cores while screen is off"
+	default n
+	help
+	  Limit max frequency and shut off cores while screen is off
+
 config MSM_AVS_HW
 	bool "Enable Adaptive Voltage Scaling (AVS)"
 	default n
