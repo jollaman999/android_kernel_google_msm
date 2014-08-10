@@ -3936,6 +3936,7 @@ static int tabla_volatile(struct snd_soc_codec *ssc, unsigned int reg)
 }
 
 #define TABLA_FORMATS (SNDRV_PCM_FMTBIT_S16_LE)
+#ifdef CONFIG_SOUND_CONTROL_HAX_3_GPL
 extern int snd_hax_reg_access(unsigned int);
 extern unsigned int snd_hax_cache_read(unsigned int);
 extern void snd_hax_cache_write(unsigned int, unsigned int);
