@@ -1341,15 +1341,11 @@ static ssize_t modalias_show(struct device *dev, struct device_attribute *attr,
 	const char *cp;
 
 	dn = dev->of_node;
-	if (!dn) {
-		strcat(buf, "\n");
-		return strlen(buf);
-	}
+	if (!dn)
+		return -ENODEV;
 	cp = of_get_property(dn, "compatible", NULL);
-	if (!cp) {
-		strcat(buf, "\n");
-		return strlen(buf);
-	}
+	if (!cp)
+		return -ENODEV;
 
 	return sprintf(buf, "vio:T%sS%s\n", vio_dev->type, cp);
 }
@@ -1383,15 +1379,11 @@ static int vio_hotplug(struct device *dev, struct kobj_uevent_env *env)
 	const char *cp;
 
 	dn = dev->of_node;
-	if (!dn) {
-		strcpy(buf, "\n");
-		return strlen(buf);
-	}
+	if (!dn)
+		return -ENODEV;
 	cp = of_get_property(dn, "compatible", NULL);
-	if (!cp) {
-		strcpy(buf, "\n");
-		return strlen(buf);
-	}
+	if (!cp)
+		return -ENODEV;
 
 	add_uevent_var(env, "MODALIAS=vio:T%sS%s", vio_dev->type, cp);
 	return 0;

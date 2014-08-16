@@ -705,7 +705,7 @@ void prune_icache_sb(struct super_block *sb, int nr_to_scan)
 		 * inode to the back of the list so we don't spin on it.
 		 */
 		if (!spin_trylock(&inode->i_lock)) {
-			list_move(&inode->i_lru, &sb->s_inode_lru);
+			list_move_tail(&inode->i_lru, &sb->s_inode_lru);
 			continue;
 		}
 
@@ -1647,7 +1647,6 @@ void __init inode_init_early(void)
 					HASH_EARLY,
 					&i_hash_shift,
 					&i_hash_mask,
-					0,
 					0);
 
 	for (loop = 0; loop < (1U << i_hash_shift); loop++)
@@ -1678,7 +1677,6 @@ void __init inode_init(void)
 					0,
 					&i_hash_shift,
 					&i_hash_mask,
-					0,
 					0);
 
 	for (loop = 0; loop < (1U << i_hash_shift); loop++)
