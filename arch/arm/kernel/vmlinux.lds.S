@@ -213,6 +213,10 @@ SECTIONS
 		INIT_RAM_FS
 	}
 #ifndef CONFIG_XIP_KERNEL
+#ifdef CONFIG_STRICT_MEMORY_RWX
+	. = ALIGN(1<<SECTION_SHIFT);
+#endif
+	__init_data = .;
 	.exit.data : {
 		ARM_EXIT_KEEP(EXIT_DATA)
 	}

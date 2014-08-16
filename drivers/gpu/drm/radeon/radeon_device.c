@@ -358,7 +358,8 @@ bool radeon_card_posted(struct radeon_device *rdev)
 {
 	uint32_t reg;
 
-	if (efi_enabled && rdev->pdev->subsystem_vendor == PCI_VENDOR_ID_APPLE)
+	if (efi_enabled(EFI_BOOT) &&
+	    rdev->pdev->subsystem_vendor == PCI_VENDOR_ID_APPLE)
 		return false;
 
 	/* first check CRTCs */
@@ -772,7 +773,7 @@ int radeon_device_init(struct radeon_device *rdev,
 	if (rdev->flags & RADEON_IS_AGP)
 		rdev->need_dma32 = true;
 	if ((rdev->flags & RADEON_IS_PCI) &&
-	    (rdev->family < CHIP_RS400))
+	    (rdev->family <= CHIP_RS740))
 		rdev->need_dma32 = true;
 
 	dma_bits = rdev->need_dma32 ? 32 : 40;
@@ -835,13 +836,22 @@ int radeon_device_init(struct radeon_device *rdev,
 			return r;
 	}
 	if ((radeon_testing & 1)) {
-		radeon_test_moves(rdev);
+		if (rdev->accel_working)
+			radeon_test_moves(rdev);
+		else
+			DRM_INFO("radeon: acceleration disabled, skipping move tests\n");
 	}
 	if ((radeon_testing & 2)) {
-		radeon_test_syncing(rdev);
+		if (rdev->accel_working)
+			radeon_test_syncing(rdev);
+		else
+			DRM_INFO("radeon: acceleration disabled, skipping sync tests\n");
 	}
 	if (radeon_benchmarking) {
-		radeon_benchmark(rdev, radeon_benchmarking);
+		if (rdev->accel_working)
+			radeon_benchmark(rdev, radeon_benchmarking);
+		else
+			DRM_INFO("radeon: acceleration disabled, skipping benchmarks\n");
 	}
 	return 0;
 }

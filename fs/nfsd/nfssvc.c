@@ -11,6 +11,7 @@
 #include <linux/module.h>
 #include <linux/fs_struct.h>
 #include <linux/swap.h>
+#include <linux/nsproxy.h>
 
 #include <linux/sunrpc/stats.h>
 #include <linux/sunrpc/svcsock.h>
@@ -182,18 +183,18 @@ int nfsd_nrthreads(void)
 	return rv;
 }
 
-static int nfsd_init_socks(int port)
+static int nfsd_init_socks(int port, struct net *net)
 {
 	int error;
 	if (!list_empty(&nfsd_serv->sv_permsocks))
 		return 0;
 
-	error = svc_create_xprt(nfsd_serv, "udp", &init_net, PF_INET, port,
+	error = svc_create_xprt(nfsd_serv, "udp", net, PF_INET, port,
 					SVC_SOCK_DEFAULTS);
 	if (error < 0)
 		return error;
 
-	error = svc_create_xprt(nfsd_serv, "tcp", &init_net, PF_INET, port,
+	error = svc_create_xprt(nfsd_serv, "tcp", net, PF_INET, port,
 					SVC_SOCK_DEFAULTS);
 	if (error < 0)
 		return error;
@@ -203,7 +204,7 @@ static int nfsd_init_socks(int port)
 
 static bool nfsd_up = false;
 
-static int nfsd_startup(unsigned short port, int nrservs)
+static int nfsd_startup(unsigned short port, int nrservs, struct net *net)
 {
 	int ret;
 
@@ -220,7 +221,7 @@ static int nfsd_startup(unsigned short port, int nrservs)
 	ret = nfsd_init_socks(port);
 	if (ret)
 		goto out_racache;
-	ret = lockd_up();
+	ret = lockd_up(&init_net);
 	if (ret)
 		goto out_racache;
 	ret = nfs4_state_start();
@@ -229,7 +230,7 @@ static int nfsd_startup(unsigned short port, int nrservs)
 	nfsd_up = true;
 	return 0;
 out_lockd:
-	lockd_down();
+	lockd_down(&init_net);
 out_racache:
 	nfsd_racache_shutdown();
 	return ret;
@@ -246,7 +247,7 @@ static void nfsd_shutdown(void)
 	if (!nfsd_up)
 		return;
 	nfs4_state_shutdown();
-	lockd_down();
+	lockd_down(&init_net);
 	nfsd_racache_shutdown();
 	nfsd_up = false;
 }
@@ -330,6 +331,8 @@ static int nfsd_get_default_max_blksize(void)
 
 int nfsd_create_serv(void)
 {
+	int error;
+
 	WARN_ON(!mutex_is_locked(&nfsd_mutex));
 	if (nfsd_serv) {
 		svc_get(nfsd_serv);
@@ -342,6 +345,18 @@ int nfsd_create_serv(void)
 				      nfsd_last_thread, nfsd, THIS_MODULE);
 	if (nfsd_serv == NULL)
 		return -ENOMEM;
+
+	error = svc_bind(nfsd_serv, current->nsproxy->net_ns);
+	if (error < 0) {
+		svc_destroy(nfsd_serv);
+		return error;
+	}
+
+	error = svc_bind(nfsd_serv, net);
+	if (error < 0) {
+		svc_destroy(nfsd_serv);
+		return error;
+	}
 
 	set_max_drc();
 	do_gettimeofday(&nfssvc_boot);		/* record boot time */
@@ -368,11 +383,12 @@ int nfsd_get_nrthreads(int n, int *nthreads)
 	return 0;
 }
 
-int nfsd_set_nrthreads(int n, int *nthreads)
+int nfsd_set_nrthreads(int n, int *nthreads, struct net *net)
 {
 	int i = 0;
 	int tot = 0;
 	int err = 0;
+	struct net *net = &init_net;
 
 	WARN_ON(!mutex_is_locked(&nfsd_mutex));
 
@@ -417,6 +433,9 @@ int nfsd_set_nrthreads(int n, int *nthreads)
 		if (err)
 			break;
 	}
+
+	if (nfsd_serv->sv_nrthreads == 1)
+		svc_shutdown_net(nfsd_serv, net);
 	svc_destroy(nfsd_serv);
 
 	return err;
@@ -428,10 +447,11 @@ int nfsd_set_nrthreads(int n, int *nthreads)
  * this is the first time nrservs is nonzero.
  */
 int
-nfsd_svc(unsigned short port, int nrservs)
+nfsd_svc(unsigned short port, int nrservs, struct net *net)
 {
 	int	error;
 	bool	nfsd_up_before;
+	struct net *net = &init_net;
 
 	mutex_lock(&nfsd_mutex);
 	dprintk("nfsd: creating service\n");
@@ -443,13 +463,13 @@ nfsd_svc(unsigned short port, int nrservs)
 	if (nrservs == 0 && nfsd_serv == NULL)
 		goto out;
 
-	error = nfsd_create_serv();
+	error = nfsd_create_serv(net);
 	if (error)
 		goto out;
 
 	nfsd_up_before = nfsd_up;
 
-	error = nfsd_startup(port, nrservs);
+	error = nfsd_startup(port, nrservs, net);
 	if (error)
 		goto out_destroy;
 	error = svc_set_num_threads(nfsd_serv, NULL, nrservs);
@@ -464,6 +484,8 @@ out_shutdown:
 	if (error < 0 && !nfsd_up_before)
 		nfsd_shutdown();
 out_destroy:
+	if (nfsd_serv->sv_nrthreads == 1)
+		svc_shutdown_net(nfsd_serv, net);
 	svc_destroy(nfsd_serv);		/* Release server */
 out:
 	mutex_unlock(&nfsd_mutex);
@@ -478,6 +500,8 @@ static int
 nfsd(void *vrqstp)
 {
 	struct svc_rqst *rqstp = (struct svc_rqst *) vrqstp;
+	struct svc_xprt *perm_sock = list_entry(rqstp->rq_server->sv_permsocks.next, typeof(struct svc_xprt), xpt_list);
+	struct net *net = perm_sock->xpt_net;
 	int err, preverr = 0;
 
 	/* Lock module and set up kernel thread */
@@ -547,6 +571,9 @@ nfsd(void *vrqstp)
 	nfsdstats.th_cnt --;
 
 out:
+	if (rqstp->rq_server->sv_nrthreads == 1)
+		svc_shutdown_net(rqstp->rq_server, &init_net);
+
 	/* Release the thread */
 	svc_exit_thread(rqstp);
 
@@ -637,7 +664,7 @@ nfsd_dispatch(struct svc_rqst *rqstp, __be32 *statp)
 	}
 
 	/* Store reply in cache. */
-	nfsd_cache_update(rqstp, proc->pc_cachetype, statp + 1);
+	nfsd_cache_update(rqstp, rqstp->rq_cachetype, statp + 1);
 	return 1;
 }
 
@@ -659,8 +686,12 @@ int nfsd_pool_stats_open(struct inode *inode, struct file *file)
 int nfsd_pool_stats_release(struct inode *inode, struct file *file)
 {
 	int ret = seq_release(inode, file);
+	struct net *net = &init_net;
+
 	mutex_lock(&nfsd_mutex);
 	/* this function really, really should have been called svc_put() */
+	if (nfsd_serv->sv_nrthreads == 1)
+		svc_shutdown_net(nfsd_serv, net);
 	svc_destroy(nfsd_serv);
 	mutex_unlock(&nfsd_mutex);
 	return ret;

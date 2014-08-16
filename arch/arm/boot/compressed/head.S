@@ -411,6 +411,7 @@ restart:	adr	r0, LC0
 dtb_check_done:
 #endif
 
+	.arch	armv7-a
 /*
  * Check to see if we will overwrite ourselves.
  *   r4  = final kernel address
@@ -428,6 +429,7 @@ dtb_check_done:
 		cmp	r10, r9
 		bls	wont_overwrite
 
+	.arch	armv7-a
 /*
  * Relocate ourselves past the end of the decompressed kernel.
  *   r6  = _edata
@@ -541,6 +543,7 @@ not_relocated:	mov	r0, #0
 		cmp	r2, r3
 		blo	1b
 
+	.arch	armv7-a
 /*
  * The C runtime environment should now be setup sufficiently.
  * Set up some pointers, and start decompressing.
@@ -581,6 +584,7 @@ params:		ldr	r0, =0x10000100		@ params_phys for RPC
 		.align
 #endif
 
+	.arch	armv7-a
 /*
  * Turn on the cache.  We need to setup some page tables so that we
  * can have both the I and D caches on.
@@ -602,6 +606,7 @@ params:		ldr	r0, =0x10000100		@ params_phys for RPC
 cache_on:	mov	r3, #8			@ cache_on function
 		b	call_cache_fn
 
+	.arch	armv7-a
 /*
  * Initialize the highest priority protection region, PR7
  * to cover all 32bit address and cacheable and bufferable.
@@ -726,6 +731,7 @@ __armv4_mmu_cache_on:
 		mcr	p15, 0, r0, c7, c10, 4	@ drain write buffer
 		mcr	p15, 0, r0, c8, c7, 0	@ flush I,D TLBs
 		mrc	p15, 0, r0, c1, c0, 0	@ read control reg
+		bic	r0, r0, #1 << 28	@ clear SCTLR.TRE
 		orr	r0, r0, #0x5000		@ I-cache enable, RR cache replacement
 		orr	r0, r0, #0x0030
 #ifdef CONFIG_CPU_ENDIAN_BE8
@@ -750,6 +756,7 @@ __armv7_mmu_cache_on:
 		mcrne	p15, 0, r0, c8, c7, 0	@ flush I,D TLBs
 #endif
 		mrc	p15, 0, r0, c1, c0, 0	@ read control reg
+		bic	r0, r0, #1 << 28	@ clear SCTLR.TRE
 		orr	r0, r0, #0x5000		@ I-cache enable, RR cache replacement
 		orr	r0, r0, #0x003c		@ write buffer
 #ifdef CONFIG_MMU
@@ -813,6 +820,7 @@ __common_mmu_cache_on:
 
 #define PROC_ENTRY_SIZE (4*5)
 
+	.arch	armv7-a
 /*
  * Here follow the relocatable cache support functions for the
  * various processors.  This is a generic hook for locating an
@@ -843,6 +851,7 @@ call_cache_fn:	adr	r12, proc_types
 		add	r12, r12, #PROC_ENTRY_SIZE
 		b	1b
 
+	.arch	armv7-a
 /*
  * Table for cache operations.  This is basically:
  *   - CPU ID match
@@ -1023,6 +1032,7 @@ proc_types:
 		.error "The size of one or more proc_types entries is wrong."
 		.endif
 
+	.arch	armv7-a
 /*
  * Turn off the Cache and MMU.  ARMv3 does not support
  * reading the control register, but ARMv4 does.
@@ -1099,6 +1109,7 @@ __armv3_mmu_cache_off:
 		mcr	p15, 0, r0, c5, c0, 0	@ invalidate whole TLB v3
 		mov	pc, lr
 
+	.arch	armv7-a
 /*
  * Clean and flush the cache to maintain consistency.
  *
@@ -1249,6 +1260,7 @@ __armv3_mpu_cache_flush:
 		mcr	p15, 0, r1, c7, c0, 0	@ invalidate whole cache v3
 		mov	pc, lr
 
+	.arch	armv7-a
 /*
  * Various debugging routines for printing hex characters and
  * memory, which again must be relocatable.

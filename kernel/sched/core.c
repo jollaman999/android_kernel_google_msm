@@ -748,8 +748,6 @@ static void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
 	update_rq_clock(rq);
 	sched_info_queued(p);
 	p->sched_class->enqueue_task(rq, p, flags);
-	trace_sched_enq_deq_task(p, 1);
-	inc_cumulative_runnable_avg(rq, p);
 }
 
 static void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
@@ -757,8 +755,6 @@ static void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
 	update_rq_clock(rq);
 	sched_info_dequeued(p);
 	p->sched_class->dequeue_task(rq, p, flags);
-	trace_sched_enq_deq_task(p, 0);
-	dec_cumulative_runnable_avg(rq, p);
 }
 
 void activate_task(struct rq *rq, struct task_struct *p, int flags)
@@ -1140,7 +1136,7 @@ void set_task_cpu(struct task_struct *p, unsigned int new_cpu)
 	 * a task's CPU. ->pi_lock for waking tasks, rq->lock for runnable tasks.
 	 *
 	 * sched_move_task() holds both and thus holding either pins the cgroup,
-	 * see set_task_rq().
+	 * see task_group().
 	 *
 	 * Furthermore, all task_rq users should acquire both locks, see
 	 * task_rq_lock().
@@ -1377,7 +1373,7 @@ out:
 		 * leave kernel.
 		 */
 		if (p->mm && printk_ratelimit()) {
-			printk_sched("process %d (%s) no longer affine to cpu%d\n",
+			printk_deferred("process %d (%s) no longer affine to cpu%d\n",
 					task_pid_nr(p), p->comm, cpu);
 		}
 	}
@@ -1467,130 +1463,6 @@ static void ttwu_activate(struct rq *rq, struct task_struct *p, int en_flags)
 		wq_worker_waking_up(p, cpu_of(rq));
 }
 
-/* Window size (in ns) */
-__read_mostly unsigned int sched_ravg_window = 10000000;
-
-/* Min window size (in ns) = 10ms */
-__read_mostly unsigned int min_sched_ravg_window = 10000000;
-
-/* Max window size (in ns) = 1s */
-__read_mostly unsigned int max_sched_ravg_window = 1000000000;
-
-/*
- * Called when new window is starting for a task, to record cpu usage over
- * recently concluded window(s). Normally 'samples' should be 1. It can be > 1
- * when, say, a real-time task runs without preemption for several windows at a
- * stretch.
- */
-static inline void
-update_history(struct rq *rq, struct task_struct *p, u32 runtime, int samples)
-{
-	u32 *hist = &p->ravg.sum_history[0];
-	int ridx, widx;
-	u32 sum = 0, avg;
-
-	/* Ignore windows where task had no activity */
-	if (!runtime)
-		return;
-
-	/* Push new 'runtime' value onto stack */
-	widx = RAVG_HIST_SIZE - 1;
-	ridx = widx - samples;
-	for (; ridx >= 0; --widx, --ridx) {
-		hist[widx] = hist[ridx];
-		sum += hist[widx];
-	}
-
-	for (widx = 0; widx < samples && widx < RAVG_HIST_SIZE; widx++) {
-		hist[widx] = runtime;
-		sum += hist[widx];
-	}
-
-	p->ravg.sum = 0;
-	if (p->on_rq) {
-		rq->cumulative_runnable_avg -= p->ravg.demand;
-		BUG_ON((s64)rq->cumulative_runnable_avg < 0);
-	}
-
-	avg = sum / RAVG_HIST_SIZE;
-
-	p->ravg.demand = max(avg, runtime);
-
-	if (p->on_rq)
-		rq->cumulative_runnable_avg += p->ravg.demand;
-}
-
-static int __init set_sched_ravg_window(char *str)
-{
-	get_option(&str, &sched_ravg_window);
-
-	return 0;
-}
-
-early_param("sched_ravg_window", set_sched_ravg_window);
-
-void update_task_ravg(struct task_struct *p, struct rq *rq, int update_sum)
-{
-	u32 window_size = sched_ravg_window;
-	int new_window;
-	u64 wallclock = sched_clock();
-
-	if (is_idle_task(p) || (sched_ravg_window < min_sched_ravg_window))
-		return;
-
-	do {
-		s64 delta = 0;
-		int n;
-		u64 now = wallclock;
-
-		new_window = 0;
-		delta = now - p->ravg.window_start;
-		BUG_ON(delta < 0);
-		if (delta > window_size) {
-			p->ravg.window_start += window_size;
-			now = p->ravg.window_start;
-			new_window = 1;
-		}
-
-		if (update_sum) {
-			unsigned int cur_freq = rq->cur_freq;
-
-			delta = now - p->ravg.mark_start;
-			BUG_ON(delta < 0);
-
-			if (unlikely(cur_freq > max_possible_freq))
-				cur_freq = max_possible_freq;
-
-			delta = div64_u64(delta  * cur_freq,
-							max_possible_freq);
-			p->ravg.sum += delta;
-			WARN_ON(p->ravg.sum > window_size);
-		}
-
-		if (!new_window)
-			break;
-
-		update_history(rq, p, p->ravg.sum, 1);
-
-		delta = wallclock - p->ravg.window_start;
-		BUG_ON(delta < 0);
-		n = div64_u64(delta, window_size);
-		if (n) {
-			if (!update_sum)
-				p->ravg.window_start = wallclock;
-			else
-				p->ravg.window_start += (u64)n *
-							 (u64)window_size;
-			BUG_ON(p->ravg.window_start > wallclock);
-			if (update_sum)
-				update_history(rq, p, window_size, n);
-		}
-		p->ravg.mark_start =  p->ravg.window_start;
-	} while (new_window);
-
-	p->ravg.mark_start = wallclock;
-}
-
 /*
  * Mark the task runnable and perform wakeup-preemption.
  */
@@ -1600,7 +1472,6 @@ ttwu_do_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)
 	trace_sched_wakeup(p, true);
 	check_preempt_curr(rq, p, wake_flags);
 
-	update_task_ravg(p, rq, 0);
 	p->state = TASK_RUNNING;
 #ifdef CONFIG_SMP
 	if (p->sched_class->task_woken)
@@ -1730,7 +1601,6 @@ static void ttwu_queue(struct task_struct *p, int cpu)
 	raw_spin_unlock(&rq->lock);
 }
 
-__read_mostly unsigned int sysctl_sched_wakeup_load_threshold = 110;
 /**
  * try_to_wake_up - wake up a thread
  * @p: the thread to be awakened
@@ -1752,16 +1622,9 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 	unsigned long flags;
 	int cpu, src_cpu, success = 0;
 
-	/*
-	 * If we are going to wake up a thread waiting for CONDITION we
-	 * need to ensure that CONDITION=1 done by the caller can not be
-	 * reordered with p->state check below. This pairs with mb() in
-	 * set_current_state() the waiting thread does.
-	 */
-	smp_mb__before_spinlock();
+	smp_wmb();
 	raw_spin_lock_irqsave(&p->pi_lock, flags);
-	src_cpu = task_cpu(p);
-	cpu = src_cpu;
+	src_cpu = cpu = task_cpu(p);
 
 	if (!(p->state & state))
 		goto out;
@@ -1776,8 +1639,21 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 	 * If the owning (remote) cpu is still in the middle of schedule() with
 	 * this task as prev, wait until its done referencing the task.
 	 */
-	while (p->on_cpu)
+	while (p->on_cpu) {
+#ifdef __ARCH_WANT_INTERRUPTS_ON_CTXSW
+		/*
+		 * In case the architecture enables interrupts in
+		 * context_switch(), we cannot busy wait, since that
+		 * would lead to deadlocks when an interrupt hits and
+		 * tries to wake up @prev. So bail and do a complete
+		 * remote wakeup.
+		 */
+		if (ttwu_activate_remote(p, wake_flags))
+			goto stat;
+#else
 		cpu_relax();
+#endif
+	}
 	/*
 	 * Pairs with the smp_wmb() in finish_lock_switch().
 	 */
@@ -1790,6 +1666,9 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 		p->sched_class->task_waking(p);
 
 	cpu = select_task_rq(p, SD_BALANCE_WAKE, wake_flags);
+
+	/* Refresh src_cpu as it could have changed since we last read it */
+	src_cpu = task_cpu(p);
 	if (src_cpu != cpu) {
 		wake_flags |= WF_MIGRATED;
 		set_task_cpu(p, cpu);
@@ -1802,25 +1681,9 @@ stat:
 out:
 	raw_spin_unlock_irqrestore(&p->pi_lock, flags);
 
-	if (task_notify_on_migrate(p)) {
-		struct migration_notify_data mnd;
-
-		mnd.src_cpu = src_cpu;
-		mnd.dest_cpu = cpu;
-		mnd.load = pct_task_load(p);
-
-		/*
-		 * Call the migration notifier with mnd for foreground task
-		 * migrations as well as for wakeups if their load is above
-		 * sysctl_sched_wakeup_load_threshold. This would prompt the
-		 * cpu-boost to boost the CPU frequency on wake up of a heavy
-		 * weight foreground task
-		 */
-		if ((src_cpu != cpu) || (mnd.load >
-					sysctl_sched_wakeup_load_threshold))
-			atomic_notifier_call_chain(&migration_notifier_head,
-					   0, (void *)&mnd);
-	}
+	if (src_cpu != cpu && task_notify_on_migrate(p))
+		atomic_notifier_call_chain(&migration_notifier_head,
+					   cpu, (void *)src_cpu);
 	return success;
 }
 
@@ -1899,7 +1762,6 @@ static void __sched_fork(struct task_struct *p)
 	p->se.prev_sum_exec_runtime	= 0;
 	p->se.nr_migrations		= 0;
 	p->se.vruntime			= 0;
-	init_new_task_load(p);
 
 	INIT_LIST_HEAD(&p->se.group_node);
 
@@ -2839,6 +2701,10 @@ static void calc_load_account_active(struct rq *this_rq)
  */
 
 /*
+ * End of global load-average stuff
+ */
+
+/*
  * The exact cpuload at various idx values, calculated at every tick would be
  * load = (2^idx - 1) / 2^idx * load + 1 / 2^idx * cur_load
  *
@@ -3437,6 +3303,20 @@ void thread_group_times(struct task_struct *p, cputime_t *ut, cputime_t *st)
 # define nsecs_to_cputime(__nsecs)	nsecs_to_jiffies(__nsecs)
 #endif
 
+static cputime_t scale_utime(cputime_t utime, cputime_t rtime, cputime_t total)
+{
+	u64 temp = (__force u64) rtime;
+
+	temp *= (__force u64) utime;
+
+	if (sizeof(cputime_t) == 4)
+		temp = div_u64(temp, (__force u32) total);
+	else
+		temp = div64_u64(temp, (__force u64) total);
+
+	return (__force cputime_t) temp;
+}
+
 void task_times(struct task_struct *p, cputime_t *ut, cputime_t *st)
 {
 	cputime_t rtime, utime = p->utime, total = utime + p->stime;
@@ -3446,13 +3326,9 @@ void task_times(struct task_struct *p, cputime_t *ut, cputime_t *st)
 	 */
 	rtime = nsecs_to_cputime(p->se.sum_exec_runtime);
 
-	if (total) {
-		u64 temp = (__force u64) rtime;
-
-		temp *= (__force u64) utime;
-		do_div(temp, (__force u32) total);
-		utime = (__force cputime_t) temp;
-	} else
+	if (total)
+		utime = scale_utime(utime, rtime, total);
+	else
 		utime = rtime;
 
 	/*
@@ -3479,13 +3355,9 @@ void thread_group_times(struct task_struct *p, cputime_t *ut, cputime_t *st)
 	total = cputime.utime + cputime.stime;
 	rtime = nsecs_to_cputime(cputime.sum_exec_runtime);
 
-	if (total) {
-		u64 temp = (__force u64) rtime;
-
-		temp *= (__force u64) cputime.utime;
-		do_div(temp, (__force u32) total);
-		utime = (__force cputime_t) temp;
-	} else
+	if (total)
+		utime = scale_utime(cputime.utime, rtime, total);
+	else
 		utime = rtime;
 
 	sig->prev_utime = max(sig->prev_utime, utime);
@@ -3620,7 +3492,6 @@ static inline void schedule_debug(struct task_struct *prev)
 
 static void put_prev_task(struct rq *rq, struct task_struct *prev)
 {
-	update_task_ravg(prev, rq, 1);
 	if (prev->on_rq || rq->skip_clock_update < 0)
 		update_rq_clock(rq);
 	prev->sched_class->put_prev_task(rq, prev);
@@ -3642,7 +3513,6 @@ pick_next_task(struct rq *rq)
 	if (likely(rq->nr_running == rq->cfs.h_nr_running)) {
 		p = fair_sched_class.pick_next_task(rq);
 		if (likely(p)) {
-			update_task_ravg(p, rq, 1);
 			return p;
 		}
 	}
@@ -3650,7 +3520,6 @@ pick_next_task(struct rq *rq)
 	for_each_class(class) {
 		p = class->pick_next_task(rq);
 		if (p) {
-			update_task_ravg(p, rq, 1);
 			return p;
 		}
 	}
@@ -5538,15 +5407,9 @@ done:
 fail:
 	double_rq_unlock(rq_src, rq_dest);
 	raw_spin_unlock(&p->pi_lock);
-	if (moved && task_notify_on_migrate(p)) {
-		struct migration_notify_data mnd;
-
-		mnd.src_cpu = src_cpu;
-		mnd.dest_cpu = dest_cpu;
-		mnd.load = pct_task_load(p);
+	if (moved && task_notify_on_migrate(p))
 		atomic_notifier_call_chain(&migration_notifier_head,
-					   0, (void *)&mnd);
-	}
+					   dest_cpu, (void *)src_cpu);
 	return ret;
 }
 
@@ -6701,11 +6564,8 @@ int sched_domain_level_max;
 
 static int __init setup_relax_domain_level(char *str)
 {
-	unsigned long val;
-
-	val = simple_strtoul(str, NULL, 0);
-	if (val < sched_domain_level_max)
-		default_relax_domain_level = val;
+	if (kstrtoint(str, 0, &default_relax_domain_level))
+		pr_warn("Unable to set relax_domain_level\n");
 
 	return 1;
 }
@@ -6910,7 +6770,6 @@ struct sched_domain *build_sched_domain(struct sched_domain_topology_level *tl,
 	if (!sd)
 		return child;
 
-	set_domain_attribute(sd, attr);
 	cpumask_and(sched_domain_span(sd), cpu_map, tl->mask(cpu));
 	if (child) {
 		sd->level = child->level + 1;
@@ -6918,6 +6777,7 @@ struct sched_domain *build_sched_domain(struct sched_domain_topology_level *tl,
 		child->parent = sd;
 	}
 	sd->child = child;
+	set_domain_attribute(sd, attr);
 
 	return sd;
 }
@@ -7774,6 +7634,7 @@ void sched_destroy_group(struct task_group *tg)
  */
 void sched_move_task(struct task_struct *tsk)
 {
+	struct task_group *tg;
 	int on_rq, running;
 	unsigned long flags;
 	struct rq *rq;
@@ -7787,6 +7648,12 @@ void sched_move_task(struct task_struct *tsk)
 		dequeue_task(rq, tsk, 0);
 	if (unlikely(running))
 		tsk->sched_class->put_prev_task(rq, tsk);
+
+	tg = container_of(task_subsys_state_check(tsk, cpu_cgroup_subsys_id,
+				lockdep_is_held(&tsk->sighand->siglock)),
+			  struct task_group, css);
+	tg = autogroup_task_group(tsk, tg);
+	tsk->sched_task_group = tg;
 
 #ifdef CONFIG_FAIR_GROUP_SCHED
 	if (tsk->sched_class->task_move_group)

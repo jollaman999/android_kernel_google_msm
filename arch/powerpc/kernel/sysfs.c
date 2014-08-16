@@ -17,6 +17,7 @@
 #include <asm/machdep.h>
 #include <asm/smp.h>
 #include <asm/pmc.h>
+#include <asm/firmware.h>
 
 #include "cacheinfo.h"
 
@@ -194,6 +195,14 @@ static ssize_t show_dscr_default(struct device *dev,
 	return sprintf(buf, "%lx\n", dscr_default);
 }
 
+static void update_dscr(void *dummy)
+{
+	if (!current->thread.dscr_inherit) {
+		current->thread.dscr = dscr_default;
+		mtspr(SPRN_DSCR, dscr_default);
+	}
+}
+
 static ssize_t __used store_dscr_default(struct device *dev,
 		struct device_attribute *attr, const char *buf,
 		size_t count)
@@ -205,6 +214,10 @@ static ssize_t __used store_dscr_default(struct device *dev,
 	if (ret != 1)
 		return -EINVAL;
 	dscr_default = val;
+
+	on_each_cpu(update_dscr, NULL, 1);
+
+	on_each_cpu(update_dscr, NULL, 1);
 
 	return count;
 }
@@ -384,8 +397,11 @@ static void __cpuinit register_cpu_online(unsigned int cpu)
 	if (cpu_has_feature(CPU_FTR_MMCRA))
 		device_create_file(s, &dev_attr_mmcra);
 
-	if (cpu_has_feature(CPU_FTR_PURR))
+	if (cpu_has_feature(CPU_FTR_PURR)) {
+		if (!firmware_has_feature(FW_FEATURE_LPAR))
+			add_write_permission_dev_attr(&dev_attr_purr);
 		device_create_file(s, &dev_attr_purr);
+	}
 
 	if (cpu_has_feature(CPU_FTR_SPURR))
 		device_create_file(s, &dev_attr_spurr);
