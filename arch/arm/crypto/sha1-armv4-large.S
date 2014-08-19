@@ -1,4 +1,4 @@
-i#define __ARM_ARCH__ __LINUX_ARM_ARCH__
+#define __ARM_ARCH__ __LINUX_ARM_ARCH__
 @ ====================================================================
 @ Written by Andy Polyakov <appro@fy.chalmers.se> for the OpenSSL
 @ project. The module is, however, dual licensed under OpenSSL and
