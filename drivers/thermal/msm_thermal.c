@@ -10,7 +10,7 @@
  * GNU General Public License for more details.
  *
  * 2012 Enhancement hint by motley <motley.slate@gmail.com>
- * 2014 Fixed for jolla-kernel's overclock performance by jollaman999
+ * 2014 Fixed parameters for jolla-kernel by jollaman999
  */
 
 #include <linux/kernel.h>
@@ -37,8 +37,8 @@
  * HOT_TEMP_OFFSET_MS - number of ms to subtract from polling time when temps are hot
  * DEFAULT_MIN_FREQ_INDEX - frequency table index for the lowest frequency to drop to during throttling
  * */
-#define DEFAULT_THROTTLE_TEMP		75
-#define MAX_THROTTLE_TEMP		85
+#define DEFAULT_THROTTLE_TEMP		70
+#define MAX_THROTTLE_TEMP		80
 #define COOL_TEMP			50
 #define COOL_TEMP_OFFSET_MS		250
 #define HOT_TEMP_OFFSET_MS		250
