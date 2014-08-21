@@ -282,7 +282,6 @@ void f2fs_evict_inode(struct inode *inode)
 	if (inode->i_nlink || is_bad_inode(inode))
 		goto no_delete;
 
-	sb_start_intwrite(inode->i_sb);
 	set_inode_flag(F2FS_I(inode), FI_NO_ALLOC);
 	i_size_write(inode, 0);
 
@@ -294,7 +293,6 @@ void f2fs_evict_inode(struct inode *inode)
 	stat_dec_inline_inode(inode);
 	f2fs_unlock_op(sbi);
 
-	sb_end_intwrite(inode->i_sb);
 no_delete:
 	invalidate_mapping_pages(NODE_MAPPING(sbi), inode->i_ino, inode->i_ino);
 	if (xnid)
@@ -304,6 +302,6 @@ no_delete:
 	if (is_inode_flag_set(F2FS_I(inode), FI_UPDATE_WRITE))
 		add_dirty_inode(sbi, inode->i_ino, UPDATE_INO);
 out_clear:
-	clear_inode(inode);
+	end_writeback(inode);
 }
 
