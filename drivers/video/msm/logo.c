@@ -27,7 +27,57 @@
 #define fb_width(fb)	((fb)->var.xres)
 #define fb_height(fb)	((fb)->var.yres)
 #define fb_size(fb)	((fb)->var.xres * (fb)->var.yres * 2)
+/*
+ rgb565 to rgba8888
+  - by jollaman999 -
+ Referenced : http://hanburn.tistory.com/140
 
+<GET_RGB565_VALUE> (RRRR RGGG GGGB BBBB)
+ |      |      |      |      | RRRR | R000 | 0000 | 0000 |
+ |      |      |      |      |      |  GGG | GGG0 | 0000 |
+ |      |      |      |      |      |      |    B | BBBB |
+
+<SHIFT_TO_END>
+ |      |      |      |      |      |      |    R | RRRR | >> 11
+ |      |      |      |      |      |      |   GG | GGGG | >> 5
+ |      |      |      |      |      |      |    B | BBBB |
+ |      |      |      |      |      |      | AAAA | AAAA |
+
+<SHIFT_TO_GET_REAL_VALUE>
+ |      |      |      |      |      |      | RRRR | R    | << 3
+ |      |      |      |      |      |      | GGGG | GG   | << 2
+ |      |      |      |      |      |      | BBBB | B    | << 3
+ |      |      |      |      |      |      | AAAA | AAAA |
+
+<REPLACE - RGBA8888>
+ | RRRR | R    |      |      |      |      |      |      | << 24
+ |      |      | GGGG | GG   |      |      |      |      | << 16
+ |      |      |      |      | BBBB | B    |      |      | << 8
+ |      |      |      |      |      |      | AAAA | AAAA |
+*/
+#ifdef CONFIG_FB_MSM_DEFAULT_DEPTH_RGBA8888
+int rgb565_to_rgba8888(unsigned short val)
+{
+	int r = val & 0xf800 >> 11;
+	int g = val & 0x07e0 >> 5;
+	int b = val & 0x001f;
+	int a = val & 0xff;
+
+	r = r << 3;
+	g = g << 2;
+	b = b << 3;
+
+	return (r << 24) | (g << 16) | (b << 8) | (a);
+}
+
+static void memset32(void *_ptr, unsigned short val, unsigned count)
+{
+	int *ptr = _ptr;
+	count >>= 1;
+	while (count--)
+		*ptr++ = rgb565_to_rgba8888(val);
+}
+#else
 static void memset16(void *_ptr, unsigned short val, unsigned count)
 {
 	unsigned short *ptr = _ptr;
@@ -35,6 +85,8 @@ static void memset16(void *_ptr, unsigned short val, unsigned count)
 	while (count--)
 		*ptr++ = val;
 }
+#endif /* CONFIG_FB_MSM_DEFAULT_DEPTH_RGBA8888 */
+
 
 /* 565RLE image format: [count(2 bytes), rle(2 bytes)] */
 int load_565rle_image(char *filename, bool bf_supported)
@@ -88,7 +140,11 @@ int load_565rle_image(char *filename, bool bf_supported)
 			unsigned n = ptr[0];
 			if (n > max)
 				break;
+			#ifdef CONFIG_FB_MSM_DEFAULT_DEPTH_RGBA8888
+			memset32(bits, ptr[1], n << 1);
+			#else
 			memset16(bits, ptr[1], n << 1);
+			#endif /* CONFIG_FB_MSM_DEFAULT_DEPTH_RGBA8888 */
 			bits += n;
 			max -= n;
 			ptr += 2;
