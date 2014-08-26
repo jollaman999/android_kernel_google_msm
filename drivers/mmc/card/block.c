@@ -1235,9 +1235,6 @@ static int mmc_blk_err_check(struct mmc_card *card,
 	 */
 	if (!mmc_host_is_spi(card->host) && rq_data_dir(req) != READ) {
 		u32 status;
-		unsigned long timeout;
-
-		timeout = jiffies + msecs_to_jiffies(MMC_BLK_TIMEOUT_MS);
 
 		/* Check stop command response */
 		if (brq->stop.resp[0] & R1_ERROR) {
