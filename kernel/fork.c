@@ -1513,12 +1513,6 @@ noinline struct pt_regs * __cpuinit __attribute__((weak)) idle_regs(struct pt_re
 	return regs;
 }
 
-noinline struct pt_regs * __attribute__((weak)) __thermal_idle_regs(struct pt_regs *regs)
-{
-	memset(regs, 0, sizeof(struct pt_regs));
-	return regs;
-}
-
 static inline void init_idle_pids(struct pid_link *links)
 {
 	enum pid_type type;
@@ -1539,21 +1533,6 @@ struct task_struct * __cpuinit fork_idle(int cpu)
 	if (!IS_ERR(task)) {
 		init_idle_pids(task->pids);
 		init_idle(task, cpu);
-	}
-
-	return task;
-}
-
-struct task_struct *__thermal_fork_idle(int cpu)
-{
-	struct task_struct *task;
-	struct pt_regs regs;
-
-	task = copy_process(CLONE_VM, 0, __thermal_idle_regs(&regs), 0, NULL,
-			    &init_struct_pid, 0);
-	if (!IS_ERR(task)) {
-		init_idle_pids(task->pids);
-		__thermal_init_idle(task, cpu);
 	}
 
 	return task;

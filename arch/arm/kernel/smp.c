@@ -132,67 +132,6 @@ int __cpuinit __cpu_up(unsigned int cpu)
 	return ret;
 }
 
-int __thermal___cpu_up(unsigned int cpu)
-{
-	struct cpuinfo_arm *ci = &per_cpu(cpu_data, cpu);
-	struct task_struct *idle = ci->idle;
-	int ret;
-
-	/*
-	 * Spawn a new process manually, if not already done.
-	 * Grab a pointer to its task struct so we can mess with it
-	 */
-	if (!idle) {
-		idle = __thermal_fork_idle(cpu);
-		if (IS_ERR(idle)) {
-			printk(KERN_ERR "CPU%u: fork() failed\n", cpu);
-			return PTR_ERR(idle);
-		}
-		ci->idle = idle;
-	} else {
-		/*
-		 * Since this idle thread is being re-used, call
-		 * init_idle() to reinitialize the thread structure.
-		 */
-		__thermal_init_idle(idle, cpu);
-	}
-
-	/*
-	 * We need to tell the secondary core where to find
-	 * its stack and the page tables.
-	 */
-	secondary_data.stack = task_stack_page(idle) + THREAD_START_SP;
-	secondary_data.pgdir = virt_to_phys(idmap_pgd);
-	secondary_data.swapper_pg_dir = virt_to_phys(swapper_pg_dir);
-	__cpuc_flush_dcache_area(&secondary_data, sizeof(secondary_data));
-	outer_clean_range(__pa(&secondary_data), __pa(&secondary_data + 1));
-
-	/*
-	 * Now bring the CPU into our world.
-	 */
-	ret = __thermal_boot_secondary(cpu, idle);
-	if (ret == 0) {
-		/*
-		 * CPU was successfully started, wait for it
-		 * to come online or time out.
-		 */
-		wait_for_completion_timeout(&cpu_running,
-						 msecs_to_jiffies(1000));
-
-		if (!cpu_online(cpu)) {
-			pr_crit("CPU%u: failed to come online\n", cpu);
-			ret = -EIO;
-		}
-	} else {
-		pr_err("CPU%u: failed to boot: %d\n", cpu, ret);
-	}
-
-	secondary_data.stack = NULL;
-	secondary_data.pgdir = 0;
-
-	return ret;
-}
-
 /* platform specific SMP operations */
 void __attribute__((weak)) __init smp_init_cpus(void)
 {
@@ -213,13 +152,6 @@ void __attribute__((weak)) __cpuinit platform_secondary_init(unsigned int cpu)
 }
 
 int __attribute__((weak)) __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
-{
-	if (smp_ops.smp_boot_secondary)
-		return smp_ops.smp_boot_secondary(cpu, idle);
-	return -ENOSYS;
-}
-
-int __attribute__((weak)) __thermal_boot_secondary(unsigned int cpu, struct task_struct *idle)
 {
 	if (smp_ops.smp_boot_secondary)
 		return smp_ops.smp_boot_secondary(cpu, idle);

@@ -133,8 +133,7 @@ static void check_temp(struct work_struct *work)
     unsigned long temp = 0;
     uint32_t max_freq = 0;
     bool update_policy = false;
-    unsigned int cpu = 0, i = 0;
-    int ret = 0;
+    int i = 0, cpu = 0, ret = 0;
 
     tsens_dev.sensor_num = msm_thermal_info.sensor_id;
     ret = tsens_get_temp(&tsens_dev, &temp);
@@ -201,7 +200,7 @@ static void check_temp(struct work_struct *work)
             for (i = 1; i < CONFIG_NR_CPUS; i++) {
                 if (cpu_online(i))
                         continue;
-                __thermal_cpu_up(i);
+                cpu_up(i);
             }
             if (cpu == (CONFIG_NR_CPUS-1)) {
                 bricked_thermal_throttled = 0;

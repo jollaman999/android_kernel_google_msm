@@ -5337,59 +5337,6 @@ void __cpuinit init_idle(struct task_struct *idle, int cpu)
 #endif
 }
 
-/**
- * init_idle - set up an idle thread for a given CPU
- * @idle: task in question
- * @cpu: cpu the idle task belongs to
- *
- * NOTE: this function does not set the idle thread's NEED_RESCHED
- * flag, to make booting more robust.
- */
-void __thermal_init_idle(struct task_struct *idle, int cpu)
-{
-	struct rq *rq = cpu_rq(cpu);
-	unsigned long flags;
-
-	raw_spin_lock_irqsave(&rq->lock, flags);
-
-	__sched_fork(idle);
-	idle->state = TASK_RUNNING;
-	idle->se.exec_start = sched_clock();
-
-	do_set_cpus_allowed(idle, cpumask_of(cpu));
-	/*
-	 * We're having a chicken and egg problem, even though we are
-	 * holding rq->lock, the cpu isn't yet set to this cpu so the
-	 * lockdep check in task_group() will fail.
-	 *
-	 * Similar case to sched_fork(). / Alternatively we could
-	 * use task_rq_lock() here and obtain the other rq->lock.
-	 *
-	 * Silence PROVE_RCU
-	 */
-	rcu_read_lock();
-	__set_task_cpu(idle, cpu);
-	rcu_read_unlock();
-
-	rq->curr = rq->idle = idle;
-#if defined(CONFIG_SMP)
-	idle->on_cpu = 1;
-#endif
-	raw_spin_unlock_irqrestore(&rq->lock, flags);
-
-	/* Set the preempt count _outside_ the spinlocks! */
-	task_thread_info(idle)->preempt_count = 0;
-
-	/*
-	 * The idle tasks have their own, simple scheduling class:
-	 */
-	idle->sched_class = &idle_sched_class;
-	ftrace_graph_init_idle_task(idle, cpu);
-#if defined(CONFIG_SMP)
-	sprintf(idle->comm, "%s/%d", INIT_TASK_COMM, cpu);
-#endif
-}
-
 #ifdef CONFIG_SMP
 void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
 {
