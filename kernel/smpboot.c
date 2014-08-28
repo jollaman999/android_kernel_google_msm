@@ -34,6 +34,16 @@ struct task_struct * __cpuinit idle_thread_get(unsigned int cpu)
 	return tsk;
 }
 
+struct task_struct * __thermal_idle_thread_get(unsigned int cpu)
+{
+	struct task_struct *tsk = per_cpu(idle_threads, cpu);
+
+	if (!tsk)
+		return ERR_PTR(-ENOMEM);
+	__thermal_init_idle(tsk, cpu);
+	return tsk;
+}
+
 void __init idle_thread_set_boot_cpu(void)
 {
 	per_cpu(idle_threads, smp_processor_id()) = current;

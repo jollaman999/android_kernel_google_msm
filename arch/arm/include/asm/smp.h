@@ -55,6 +55,12 @@ extern void set_smp_cross_call(void (*)(const struct cpumask *, unsigned int));
 extern int boot_secondary(unsigned int cpu, struct task_struct *);
 
 /*
+ * Boot a secondary CPU, and assign it the specified idle task.
+ * This also gives us the initial stack to use for this CPU.
+ */
+extern int __thermal_boot_secondary(unsigned int cpu, struct task_struct *);
+
+/*
  * Called from platform specific assembly code, this is the
  * secondary CPU entry point.
  */
