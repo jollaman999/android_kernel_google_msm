@@ -29,7 +29,7 @@ uint32_t old_max = 0;
 
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
-static void __cpuinit msm_sleeper_early_suspend(struct early_suspend *h)
+static void msm_sleeper_early_suspend(struct early_suspend *h)
 {
   int cpu;
 
@@ -43,7 +43,7 @@ static void __cpuinit msm_sleeper_early_suspend(struct early_suspend *h)
 
 }
 
-static void __cpuinit msm_sleeper_late_resume(struct early_suspend *h)
+static void msm_sleeper_late_resume(struct early_suspend *h)
 {
   int cpu;
 
