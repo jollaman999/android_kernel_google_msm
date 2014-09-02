@@ -150,6 +150,7 @@ void msm_gemini_hw_fe_buffer_update(struct msm_gemini_hw_buf *p_input,
 
 	struct msm_gemini_hw_cmd *hw_cmd_p;
 
+	GMN_DBG("%s:%d] pingpong index %d", __func__, __LINE__, pingpong_index);
 	if (pingpong_index == 0) {
 		hw_cmd_p = &hw_cmd_fe_ping_update[0];
 		n_reg_val = ((((p_input->num_of_mcu_rows - 1) <<
@@ -402,6 +403,18 @@ void msm_gemini_hw_write(struct msm_gemini_hw_cmd *hw_cmd_p)
 	new_data = hw_cmd_p->data & hw_cmd_p->mask;
 	new_data |= old_data;
 	writel(new_data, paddr);
+}
+
+void msm_gemini_io_w(uint32_t offset, uint32_t val)
+{
+	uint32_t *paddr = gemini_region_base + offset;
+	writel(val, paddr);
+}
+
+uint32_t msm_gemini_io_r(uint32_t offset)
+{
+	uint32_t *paddr = gemini_region_base + offset;
+	return readl(paddr);
 }
 
 int msm_gemini_hw_wait(struct msm_gemini_hw_cmd *hw_cmd_p, int m_us)
