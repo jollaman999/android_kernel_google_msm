@@ -635,6 +635,7 @@ enum msm_stats_enum_type {
 	MSM_STATS_TYPE_BF,	/* Bayer Focus */
 	MSM_STATS_TYPE_BHIST,	/* Bayer Hist */
 	MSM_STATS_TYPE_AE_AW,	/* legacy stats for vfe 2.x */
+	MSM_STATS_TYPE_COMP, /* Composite stats */
 	MSM_STATS_TYPE_MAX	/* MAX */
 };
 
@@ -1036,20 +1037,6 @@ struct msm_snapshot_pp_status {
 #define SENSOR_QVGA_SIZE		2
 #define SENSOR_INVALID_SIZE		3
 
-#define CAMERA_EFFECT_OFF		0
-#define CAMERA_EFFECT_MONO		1
-#define CAMERA_EFFECT_NEGATIVE		2
-#define CAMERA_EFFECT_SOLARIZE		3
-#define CAMERA_EFFECT_SEPIA		4
-#define CAMERA_EFFECT_POSTERIZE		5
-#define CAMERA_EFFECT_WHITEBOARD	6
-#define CAMERA_EFFECT_BLACKBOARD	7
-#define CAMERA_EFFECT_AQUA		8
-#define CAMERA_EFFECT_EMBOSS		9
-#define CAMERA_EFFECT_SKETCH		10
-#define CAMERA_EFFECT_NEON		11
-#define CAMERA_EFFECT_MAX		12
-
 /* QRD */
 #define CAMERA_EFFECT_BW		10
 #define CAMERA_EFFECT_BLUISH	12
@@ -1225,6 +1212,7 @@ enum msm_v4l2_power_line_frequency {
 #define CAMERA_ISO_TYPE_400            4
 #define CAMEAR_ISO_TYPE_800            5
 #define CAMERA_ISO_TYPE_1600           6
+#define CAMERA_ISO_TYPE_DEFAULT     7
 
 struct sensor_pict_fps {
 	uint16_t prevfps;
@@ -1326,7 +1314,17 @@ enum msm_sensor_resolution_t {
 	MSM_SENSOR_RES_4,
 	MSM_SENSOR_RES_5,
 	MSM_SENSOR_RES_6,
+/* LGE_CHANGE_E, Define For CE1702 output mode, 2012.11.10, elin.lee*/
 	MSM_SENSOR_RES_7,
+	MSM_SENSOR_RES_8,
+	MSM_SENSOR_RES_9,
+	MSM_SENSOR_RES_10,
+	MSM_SENSOR_RES_ZSL,//SENSOR_MODE_ZSL
+	MSM_SENSOR_RES_BURST,//SENSOR_MODE_BURSTSHOT
+	MSM_SENSOR_RES_HDR,//SENSOR_MODE_HDR
+	MSM_SENSOR_RES_LLS,//SENSOR_MODE_LOW_LIGHT_SHOT
+	MSM_SENSOR_RES_YUV_PREVIEW, //SENSOR_MODE_LOW_LIGHT_SHOT
+/* LGE_CHANGE_E, Define For CE1702 output mode, 2012.11.10, elin.lee*/	
 	MSM_SENSOR_INVALID_RES,
 };
 
@@ -1489,6 +1487,10 @@ struct csiphy_cfg_data {
 #define CSI_RAW8    0x2A
 #define CSI_RAW10   0x2B
 #define CSI_RAW12   0x2C
+#define CSI_YUV420_Y_8 0x30
+#define CSI_YUV420_UV_8 0x31
+#define CSI_YUV420_JM_8 0x32
+#define CSI_JPEG   0x30
 
 #define CSI_DECODE_6BIT 0
 #define CSI_DECODE_8BIT 1
@@ -1870,6 +1872,11 @@ struct msm_calib_dpc {
 	struct pixel_t snapshot_coord[128];
 	struct pixel_t preview_coord[128];
 	struct pixel_t video_coord[128];
+};
+
+struct msm_calib_raw {
+	uint8_t *data;
+	uint32_t size;
 };
 
 enum msm_camera_i2c_reg_addr_type {
