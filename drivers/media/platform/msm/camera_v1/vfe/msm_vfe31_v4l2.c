@@ -4003,9 +4003,24 @@ int msm_vfe_subdev_init(struct v4l2_subdev *sd)
 			vfe31_ctrl->vfe_camif_clk,
 			ARRAY_SIZE(vfe_camif_clk_info), 1);
 		if (rc < 0)
-			goto vfe_clk_enable_failed;
+			goto vfe_camif_clk_enable_failed;
 		msm_vfe_camif_pad_reg_reset();
 	}
+
+#ifdef CONFIG_MSM_IOMMU
+	rc = iommu_attach_device(mctl->domain, vfe31_ctrl->iommu_ctx_imgwr);
+	if (rc < 0) {
+		rc = -ENODEV;
+		pr_err("%s: Device attach failed\n", __func__);
+		goto device_imgwr_attach_failed;
+	}
+	rc = iommu_attach_device(mctl->domain, vfe31_ctrl->iommu_ctx_misc);
+	if (rc < 0) {
+		rc = -ENODEV;
+		pr_err("%s: Device attach failed\n", __func__);
+		goto device_misc_attach_failed;
+	}
+#endif
 
 	msm_camio_bus_scale_cfg(
 		mctl->sdata->pdata->cam_bus_scale_table, S_INIT);
@@ -4017,6 +4032,19 @@ int msm_vfe_subdev_init(struct v4l2_subdev *sd)
 
 	return rc;
 
+#ifdef CONFIG_MSM_IOMMU
+device_misc_attach_failed:
+	iommu_detach_device(mctl->domain, vfe31_ctrl->iommu_ctx_imgwr);
+device_imgwr_attach_failed:
+#endif
+	if (!mctl->sdata->csi_if)
+		msm_cam_clk_enable(&vfe31_ctrl->pdev->dev,
+			vfe_camif_clk_info,
+			vfe31_ctrl->vfe_camif_clk,
+			ARRAY_SIZE(vfe_camif_clk_info), 0);
+vfe_camif_clk_enable_failed:
+	msm_cam_clk_enable(&vfe31_ctrl->pdev->dev, vfe_clk_info,
+		vfe31_ctrl->vfe_clk, ARRAY_SIZE(vfe_clk_info), 0);
 vfe_clk_enable_failed:
 	regulator_disable(vfe31_ctrl->fs_vfe);
 vfe_fs_failed:
@@ -4025,7 +4053,6 @@ vfe_fs_failed:
 camif_remap_failed:
 	iounmap(vfe31_ctrl->vfebase);
 vfe_remap_failed:
-	disable_irq(vfe31_ctrl->vfeirq->start);
 mctl_failed:
 	return rc;
 }
@@ -4036,6 +4063,11 @@ void msm_vfe_subdev_release(struct v4l2_subdev *sd)
 		(struct msm_cam_media_controller *)v4l2_get_subdev_hostdata(sd);
 	disable_irq(vfe31_ctrl->vfeirq->start);
 	tasklet_kill(&vfe31_tasklet);
+
+#ifdef CONFIG_MSM_IOMMU
+	iommu_detach_device(pmctl->domain, vfe31_ctrl->iommu_ctx_misc);
+	iommu_detach_device(pmctl->domain, vfe31_ctrl->iommu_ctx_imgwr);
+#endif
 
 	if (!pmctl->sdata->csi_if)
 		msm_cam_clk_enable(&vfe31_ctrl->pdev->dev,
@@ -4139,6 +4171,25 @@ static int __devinit vfe31_probe(struct platform_device *pdev)
 	}
 
 	disable_irq(vfe31_ctrl->vfeirq->start);
+
+#ifdef CONFIG_MSM_IOMMU
+	/*get device context for IOMMU*/
+	vfe31_ctrl->iommu_ctx_imgwr =
+		msm_iommu_get_ctx("vfe_imgwr"); /*re-confirm*/
+	vfe31_ctrl->iommu_ctx_misc =
+		msm_iommu_get_ctx("vfe_misc"); /*re-confirm*/
+	if (!vfe31_ctrl->iommu_ctx_imgwr || !vfe31_ctrl->iommu_ctx_misc) {
+		if (vfe31_ctrl->camifmem) {
+			release_mem_region(vfe31_ctrl->camifmem->start,
+				resource_size(vfe31_ctrl->camifmem));
+		}
+		release_mem_region(vfe31_ctrl->vfemem->start,
+			resource_size(vfe31_ctrl->vfemem));
+		pr_err("%s: No iommu fw context found\n", __func__);
+		rc = -ENODEV;
+		goto vfe31_no_resource;
+	}
+#endif
 
 	vfe31_ctrl->pdev = pdev;
 	vfe31_ctrl->fs_vfe = regulator_get(&vfe31_ctrl->pdev->dev, "vdd");

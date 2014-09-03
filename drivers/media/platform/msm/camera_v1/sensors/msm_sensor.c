@@ -216,7 +216,7 @@ int32_t msm_sensor_write_res_settings(struct msm_sensor_ctrl_t *s_ctrl,
 int32_t msm_sensor_write_output_settings(struct msm_sensor_ctrl_t *s_ctrl,
 	uint16_t res)
 {
-	int32_t rc = -EIO;
+	int32_t rc = -EFAULT;
 	uint32_t fll = (s_ctrl->msm_sensor_reg->
 		output_settings[res].frame_length_lines *
 		s_ctrl->fps_divider) / Q10;
@@ -571,7 +571,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_PICT_FPS:
 			if (s_ctrl->func_tbl->
 			sensor_set_fps == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->
@@ -586,7 +586,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 			}
 			if (s_ctrl->func_tbl->
 			sensor_write_exp_gain == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc =
@@ -605,7 +605,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 			}
 			if (s_ctrl->func_tbl->
 			sensor_write_snapshot_exp_gain == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc =
@@ -621,7 +621,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_MODE:
 			if (s_ctrl->func_tbl->
 			sensor_set_sensor_mode == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->
@@ -634,7 +634,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_EFFECT:
 			// color effect by Jungki.kim
 			if (s_ctrl->func_tbl->sensor_special_effect== NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_special_effect(s_ctrl, cdata.cfg.effect);
@@ -643,7 +643,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_EXPOSURE_COMPENSATION:
 			// Adjust Exposure by Jungki.kim
 			if (s_ctrl->func_tbl->sensor_exposure_compensation== NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_exposure_compensation(s_ctrl, cdata.cfg.exp_compensation);
@@ -652,7 +652,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_AF_MODE:
 			//AF Mode Settings for CE1702 by jungki.kim
 			if (s_ctrl->func_tbl->sensor_set_focus_mode_setting== NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_set_focus_mode_setting(s_ctrl, cdata.cfg.afmode);
@@ -661,7 +661,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_AUTO_FOCUS:
 			// Start AF for CE1702 by jungki.kim
 			if (s_ctrl->func_tbl->sensor_start_af== NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_start_af(s_ctrl);
@@ -670,7 +670,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_STOP_AF:
 			// Start AF for CE1702 by jungki.kim
 			if (s_ctrl->func_tbl->sensor_stop_af== NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_stop_af(s_ctrl);
@@ -679,7 +679,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_AF_WINDOW:
 			//Set AF Window for CE1702 by jungki.kim
 			if (s_ctrl->func_tbl->sensor_set_af_window == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_set_af_window(s_ctrl, cdata.cfg.af_window);
@@ -688,7 +688,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_MANUAL_FOCUS_LENGTH:
 			//Support Manual Focus by jungki.kim
 			if (s_ctrl->func_tbl->sensor_set_manual_focus_length== NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_set_manual_focus_length(s_ctrl, cdata.cfg.focus_length);
@@ -697,7 +697,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_WB:
 			//White Balance Settings for CE1702 by jungki.kim
 			if (s_ctrl->func_tbl->sensor_whitebalance_setting== NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_whitebalance_setting(s_ctrl, cdata.cfg.wb_val);
@@ -706,7 +706,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_ZOOM:
 			//Zoom Ratio Settings for CE1702 by jungki.kim
 			if (s_ctrl->func_tbl->sensor_set_zoom_ratio== NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_set_zoom_ratio(s_ctrl, cdata.cfg.zoom);
@@ -715,7 +715,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_LED_FLASH_MODE:
 			//Support LED Flash only for CE1702 by jungki.kim
 			if (s_ctrl->func_tbl->sensor_set_led_flash_mode== NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_set_led_flash_mode(s_ctrl, cdata.cfg.flash_mode);
@@ -724,7 +724,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_ANTIBANDING_CE1702:
 			//Set Antibanding for CE1702 by jungki.kim
 			if (s_ctrl->func_tbl->sensor_set_antibanding_ce1702== NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_set_antibanding_ce1702(s_ctrl, cdata.cfg.antibanding);
@@ -733,7 +733,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_AE_WINDOW:
 			//Set AE Window for CE1702 by jungki.kim
 			if (s_ctrl->func_tbl->sensor_set_ae_window == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_set_ae_window(s_ctrl, cdata.cfg.ae_window);
@@ -742,7 +742,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_AEC_AWB_LOCK_CE1702:
 			//Support AEC/AWB Lock For CE1702 by jungki.kim
 			if (s_ctrl->func_tbl->sensor_set_aec_awb_lock == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_set_aec_awb_lock(s_ctrl, cdata.cfg.aec_awb_lock);
@@ -751,7 +751,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_GET_CAM_OPEN_MODE:
 			//                                                 
 			if (s_ctrl->func_tbl->sensor_get_cam_open_mode == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_get_cam_open_mode(s_ctrl, cdata.cfg.cam_op_mode);
@@ -760,7 +760,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_EXIF_ROTATION:
 			//                                                         
 			if (s_ctrl->func_tbl->sensor_set_exif_rotation == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_set_exif_rotation(s_ctrl, cdata.cfg.rotation);
@@ -769,7 +769,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SET_EXIF_GPS:
 			//                                                 
 			if (s_ctrl->func_tbl->sensor_set_exif_gps == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_set_exif_gps(s_ctrl, &cdata.cfg.gps);
@@ -778,7 +778,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_HDR_UPDATE:
 			if (s_ctrl->func_tbl->
 			sensor_hdr_update == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->
@@ -790,7 +790,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_SENSOR_INIT:
 			if (s_ctrl->func_tbl->
 			sensor_mode_init == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->
@@ -803,7 +803,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		case CFG_GET_OUTPUT_INFO:
 			if (s_ctrl->func_tbl->
 			sensor_get_output_info == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->
@@ -819,7 +819,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 
 		case CFG_START_STREAM:
 			if (s_ctrl->func_tbl->sensor_start_stream == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			s_ctrl->func_tbl->sensor_start_stream(s_ctrl);
@@ -827,7 +827,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 
 		case CFG_STOP_STREAM:
 			if (s_ctrl->func_tbl->sensor_stop_stream == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			s_ctrl->func_tbl->sensor_stop_stream(s_ctrl);
@@ -835,7 +835,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 
 		case CFG_GET_CSI_PARAMS:
 			if (s_ctrl->func_tbl->sensor_get_csi_params == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			rc = s_ctrl->func_tbl->sensor_get_csi_params(
@@ -853,7 +853,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 			if (s_ctrl->func_tbl->sensor_power_up)
 				rc = s_ctrl->func_tbl->sensor_power_up(s_ctrl);
 			else
-				rc = -EIO;
+				rc = -EFAULT;
 			break;
 
 		case CFG_POWER_DOWN:
@@ -861,13 +861,13 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 				rc = s_ctrl->func_tbl->sensor_power_down(
 					s_ctrl);
 			else
-				rc = -EIO;
+				rc = -EFAULT;
 			break;
                 //Start :randy@qualcomm.com for calibration 2012.03.25
                 case CFG_GET_CALIB_DATA:
                         if (s_ctrl->func_tbl->sensor_get_eeprom_data
                                 == NULL) {
-                                rc = -EIO;
+                                rc = -EFAULT;
                                 break;
                         }
                         rc = s_ctrl->func_tbl->sensor_get_eeprom_data(
@@ -877,7 +877,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
                         if (copy_to_user((void *)argp,
                                 &cdata,
                                 sizeof(cdata)))
-                                rc = -EIO;
+                                rc = -EFAULT;
                         break;
                 //End :randy@qualcomm.com for calibration 2012.03.25
 
@@ -886,7 +886,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 				rc = s_ctrl->func_tbl->sensor_set_vision_mode(
 					s_ctrl, cdata.cfg.vision_mode_enable);
 			else
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 		case CFG_SET_VISION_AE:
 			if (s_ctrl->func_tbl->sensor_set_vision_ae_control)
@@ -894,12 +894,12 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 					sensor_set_vision_ae_control(
 					s_ctrl, cdata.cfg.vision_ae);
 			else
-				rc = -EIO;
+				rc = -EFAULT;
 			break;
 /*                                                                                             */
 		case CFG_SET_OBJECT_TRACKING:
 			if (s_ctrl->func_tbl->sensor_object_tracking== NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			s_ctrl->func_tbl->sensor_object_tracking(s_ctrl,&cdata.cfg.rect_info);
@@ -909,7 +909,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 /*                                                                                          */
 		case CFG_SET_DIM_INFO:
 			if (s_ctrl->func_tbl->sensor_dim_info== NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			s_ctrl->func_tbl->sensor_dim_info(s_ctrl,&cdata.cfg.dimension);
@@ -919,7 +919,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 /*                                                                           */
 		case CFG_SET_ISO:
 			if(s_ctrl->func_tbl->sensor_set_iso == NULL){
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 				}
 			rc = s_ctrl->func_tbl->sensor_set_iso(s_ctrl, cdata.cfg.iso_type);
@@ -929,7 +929,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 /*                                                                               */
 		case CFG_SET_MANUAL_SCENE_MODE:
 			if(s_ctrl->func_tbl->sensor_set_manual_scene_mode== NULL){
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 				}
 			rc = s_ctrl->func_tbl->sensor_set_manual_scene_mode(s_ctrl, cdata.cfg.scene_mode);
@@ -941,14 +941,14 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 			if (s_ctrl->func_tbl->sensor_set_gyro_data) 
 				rc = s_ctrl->func_tbl->sensor_set_gyro_data(s_ctrl,(uint8_t *)cdata.cfg.setting);
 			else
-				rc = -EIO;
+				rc = -EFAULT;
 			break;
 /*                                                                    */
 
 /*                                                                            */
 		case CFG_SET_WDR:
 			if(s_ctrl->func_tbl->sensor_set_wdr == NULL){
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 				}
 			rc = s_ctrl->func_tbl->sensor_set_wdr(s_ctrl, cdata.cfg.wdr_mode);
@@ -957,7 +957,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 /*                                                                                            */
 		case CFG_SET_ASD:
 			if(s_ctrl->func_tbl->sensor_set_asd_enable== NULL){
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 				}
 			rc = s_ctrl->func_tbl->sensor_set_asd_enable(s_ctrl, cdata.cfg.asd_onoff);
@@ -966,7 +966,7 @@ int32_t msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 /*                                                                  */
 		case CFG_SET_EXIF_THUMBNAIL_SIZE:
 			if (s_ctrl->func_tbl->sensor_set_exif_thumbnail_size == NULL) {
-				rc = -EIO;
+				rc = -EFAULT;
 				break;
 			}
 			s_ctrl->func_tbl->sensor_set_exif_thumbnail_size(s_ctrl, &cdata.cfg.dimension);
@@ -2176,7 +2176,7 @@ int32_t msm_sensor_i2c_probe(struct i2c_client *client,
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
 		pr_err("%s %s i2c_check_functionality failed\n",
 			__func__, client->name);
-		rc = -EIO;
+		rc = -EFAULT;
 		return rc;
 	}
 
@@ -2190,14 +2190,14 @@ int32_t msm_sensor_i2c_probe(struct i2c_client *client,
 	} else {
 		pr_err("%s %s sensor_i2c_client NULL\n",
 			__func__, client->name);
-		rc = -EIO;
+		rc = -EFAULT;
 		return rc;
 	}
 
 	s_ctrl->sensordata = client->dev.platform_data;
 	if (s_ctrl->sensordata == NULL) {
 		pr_err("%s %s NULL sensor data\n", __func__, client->name);
-		return -EIO;
+		return -EFAULT;
 	}
 
 	rc = s_ctrl->func_tbl->sensor_power_up(s_ctrl);

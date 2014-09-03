@@ -2506,7 +2506,7 @@ int8_t ce1702_set_wb_setting(struct msm_sensor_ctrl_t *s_ctrl, uint8_t wb)
 	} while((res != 0) && (cnt < 500));
 
 	if (cnt >=500)
-		rc = -EFAULT;
+		rc = -EIO;
 
 	ce1702_wb_mode = wb;
 	return rc;
@@ -3150,7 +3150,7 @@ int8_t ce1702_set_iso(struct msm_sensor_ctrl_t *s_ctrl, int32_t iso)
 		retry_cnt++;
 	} while((res != 0) && (retry_cnt < 500));
 
-	if (retry_cnt >=500) rc = -EFAULT;
+	if (retry_cnt >=500) rc = -EIO;
 
 	ce1702_iso_value = iso;
 

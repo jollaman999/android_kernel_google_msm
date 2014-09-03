@@ -15,9 +15,9 @@
 #include "msm_camera_i2c_mux.h"
 #include <linux/mfd/pm8xxx/pm8921.h>
 #if defined(CONFIG_MACH_APQ8064_AWIFI)
-#include "../../../../../arch/arm/mach-msm/lge/awifi/board-awifi.h"
+#include "../../../../../../arch/arm/mach-msm/lge/awifi/board-awifi.h"
 #else
-#include "../../../../../arch/arm/mach-msm/lge/L05E/board-L05E.h"
+#include "../../../../../../arch/arm/mach-msm/lge/L05E/board-L05E.h"
 #endif
 #include <mach/board_lge.h>
 #define SENSOR_NAME "imx119"

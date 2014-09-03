@@ -169,8 +169,8 @@ static struct msm_camera_i2c_reg_conf s5k4e5ya_prev_settings[] = {
 	{0x0341, 0x25},   // 720 + 12 = 732 dec = 2DCh
 #endif
 //                                                                   
-	{0x0342, 0x0C},    // Line Length, MIPI Non-Continuous mode : B30h 이상, Continous mode :AB2h 이상.] 
-	{0x0343, 0x6F},    // B30h 이상이면 모두 이상없음.
+	{0x0342, 0x0C},    // Line Length, MIPI Non-Continuous mode : B30h, Continous mode :AB2h] 
+	{0x0343, 0x6F},    // B30h
 	
 	// MIPI Size Setting
 	{0x30A9, 0x02},//Horizontal Binning On
@@ -328,8 +328,8 @@ static struct msm_camera_i2c_reg_conf s5k4e5ya_snap_settings[] = {
 	{0x0341, 0x30},   //1952 + 12 = 1972 dec = 7A8h
 #endif
 //                                                                   
-	{0x0342, 0x0A},    // Line Length, MIPI Non-Continuous mode : B30h 이상, Continous mode :AB2h 이상.] 
-	{0x0343, 0xB2},    // B30h 이상이면 모두 이상없음. 
+	{0x0342, 0x0A},    // Line Length, MIPI Non-Continuous mode : B30h, Continous mode :AB2h] 
+	{0x0343, 0xB2},    // B30h
 	// MIPI Size Setting
 	{0x30A9, 0x03},//Horizontal Binning Off
 	{0x300E, 0x28},//E8 Vertical Binning Off
@@ -486,8 +486,8 @@ static struct msm_camera_i2c_reg_conf s5k4e5ya_video_settings[] = {
 	{0x0341, 0x30},   //1960 + 12 = 1972 dec = 7B4h
 #endif
 //                                                                   
-	{0x0342, 0x0A},    // Line Length, MIPI Non-Continuous mode : B30h 이상, Continous mode :AB2h 이상.] 
-	{0x0343, 0xC0},    // B30h 이상이면 모두 이상없음.
+	{0x0342, 0x0A},    // Line Length, MIPI Non-Continuous mode : B30h, Continous mode :AB2h] 
+	{0x0343, 0xC0},    // B30h
 	
 	// MIPI Size Setting
 	{0x30A9, 0x03},//Horizontal Binning Off
