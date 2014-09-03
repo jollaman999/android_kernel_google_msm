@@ -1,0 +1,47 @@
+--- drivers/media/platform/msm/camera_v1/server/msm_cam_server.c
++++ drivers/media/platform/msm/camera_v1/server/msm_cam_server.c
+@@ -1213,7 +1497,7 @@
+ 		sub->type = V4L2_EVENT_PRIVATE_START + MSM_CAM_RESP_CTRL;
+ 		D("sub->type start = 0x%x\n", sub->type);
+ 		do {
+-			rc = v4l2_event_subscribe(fh, sub, 50);
++			rc = v4l2_event_subscribe(fh, sub, 100);
+ 			if (rc < 0) {
+ 				D("%s: failed for evtType = 0x%x, rc = %d\n",
+ 						__func__, sub->type, rc);
+@@ -1230,7 +1514,7 @@
+ 			V4L2_EVENT_PRIVATE_START + MSM_SVR_RESP_MAX);
+ 	} else {
+ 		D("sub->type not V4L2_EVENT_ALL = 0x%x\n", sub->type);
+-		rc = v4l2_event_subscribe(fh, sub, 50);
++		rc = v4l2_event_subscribe(fh, sub, 100);
+ 		if (rc < 0)
+ 			D("%s: failed for evtType = 0x%x, rc = %d\n",
+ 						__func__, sub->type, rc);
+@@ -1693,7 +2011,7 @@
+ 
+ 	D("%s\n", __func__);
+ 	poll_wait(fp,
+-		 &g_server_dev.server_command_queue.eventHandle.wait,
++		 &g_server_dev.server_command_queue.eventHandle.wait,
+ 		 wait);
+ 	if (v4l2_event_pending(&g_server_dev.server_command_queue.eventHandle))
+ 		rc |= POLLPRI;
+@@ -2972,7 +3327,7 @@
+ 	D("%s\n", __func__);
+ 
+ 	poll_wait(fp,
+-	&config->config_stat_event_queue.eventHandle.wait, wait);
++	&config->config_stat_event_queue.eventHandle.wait, wait);
+ 	if (v4l2_event_pending(&config->config_stat_event_queue.eventHandle))
+ 		rc |= POLLPRI;
+ 	return rc;
+@@ -3119,7 +3469,7 @@
+ 	struct v4l2_event_subscription temp_sub;
+ 
+ 	D("%s: cmd %d\n", __func__, _IOC_NR(cmd));
+-	ev.id = 0;
++	ev.id = 0;
+ 
+ 	switch (cmd) {
+ 	/* memory management shall be handeld here*/

@@ -1,0 +1,31 @@
+--- drivers/media/platform/msm/camera_v1/msm.h
++++ drivers/media/platform/msm/camera_v1/msm.h
+@@ -330,27 +348,13 @@
+ 	uint32_t ping_imem_cbcr;
+ 	uint32_t pong_imem_y;
+ 	uint32_t pong_imem_cbcr;
++	uint8_t hardware_running; /*                                                                            */
+ 
+ 	/*IOMMU domain for this session*/
+ 	int domain_num;
+ 	struct iommu_domain *domain;
+ };
+ 
+-/* abstract camera device represents a VFE and connected sensor */
+-struct msm_isp_ops {
+-	char *config_dev_name;
+-
+-	int (*isp_config)(struct msm_cam_media_controller *pmctl,
+-		 unsigned int cmd, unsigned long arg);
+-	int (*isp_notify)(struct v4l2_subdev *sd,
+-		unsigned int notification, void *arg);
+-	int (*isp_pp_cmd)(struct msm_cam_media_controller *pmctl,
+-		 struct msm_mctl_pp_cmd, void *data);
+-
+-	/* vfe subdevice */
+-	struct v4l2_subdev *sd;
+-};
+-
+ struct msm_isp_buf_info {
+ 	int type;
+ 	unsigned long buffer;

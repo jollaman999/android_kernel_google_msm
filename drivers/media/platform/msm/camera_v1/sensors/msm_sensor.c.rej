@@ -1,0 +1,307 @@
+--- drivers/media/platform/msm/camera_v1/sensors/msm_sensor.c
++++ drivers/media/platform/msm/camera_v1/sensors/msm_sensor.c
+@@ -217,6 +311,9 @@
+ 	uint16_t res)
+ {
+ 	int32_t rc = -EFAULT;
++	uint32_t fll = (s_ctrl->msm_sensor_reg->
++		output_settings[res].frame_length_lines *
++		s_ctrl->fps_divider) / Q10;
+ 	struct msm_camera_i2c_reg_conf dim_settings[] = {
+ 		{s_ctrl->sensor_output_reg_addr->x_output,
+ 			s_ctrl->msm_sensor_reg->
+@@ -629,6 +751,159 @@
+ 			break;
+ 
+ 		case CFG_SET_EFFECT:
++			// color effect by Jungki.kim
++			if (s_ctrl->func_tbl->sensor_special_effect== NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->sensor_special_effect(s_ctrl, cdata.cfg.effect);
++			break;
++
++		case CFG_SET_EXPOSURE_COMPENSATION:
++			// Adjust Exposure by Jungki.kim
++			if (s_ctrl->func_tbl->sensor_exposure_compensation== NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->sensor_exposure_compensation(s_ctrl, cdata.cfg.exp_compensation);
++			break;
++
++		case CFG_SET_AF_MODE:
++			//AF Mode Settings for CE1702 by jungki.kim
++			if (s_ctrl->func_tbl->sensor_set_focus_mode_setting== NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->sensor_set_focus_mode_setting(s_ctrl, cdata.cfg.afmode);
++			break;
++
++		case CFG_SET_AUTO_FOCUS:
++			// Start AF for CE1702 by jungki.kim
++			if (s_ctrl->func_tbl->sensor_start_af== NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->sensor_start_af(s_ctrl);
++			break;
++
++		case CFG_SET_STOP_AF:
++			// Start AF for CE1702 by jungki.kim
++			if (s_ctrl->func_tbl->sensor_stop_af== NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->sensor_stop_af(s_ctrl);
++			break;
++
++		case CFG_SET_AF_WINDOW:
++			//Set AF Window for CE1702 by jungki.kim
++			if (s_ctrl->func_tbl->sensor_set_af_window == NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->sensor_set_af_window(s_ctrl, cdata.cfg.af_window);
++			break;
++
++		case CFG_SET_MANUAL_FOCUS_LENGTH:
++			//Support Manual Focus by jungki.kim
++			if (s_ctrl->func_tbl->sensor_set_manual_focus_length== NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->sensor_set_manual_focus_length(s_ctrl, cdata.cfg.focus_length);
++			break;
++
++		case CFG_SET_WB:
++			//White Balance Settings for CE1702 by jungki.kim
++			if (s_ctrl->func_tbl->sensor_whitebalance_setting== NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->sensor_whitebalance_setting(s_ctrl, cdata.cfg.wb_val);
++			break;
++
++		case CFG_SET_ZOOM:
++			//Zoom Ratio Settings for CE1702 by jungki.kim
++			if (s_ctrl->func_tbl->sensor_set_zoom_ratio== NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->sensor_set_zoom_ratio(s_ctrl, cdata.cfg.zoom);
++			break;
++
++		case CFG_SET_LED_FLASH_MODE:
++			//Support LED Flash only for CE1702 by jungki.kim
++			if (s_ctrl->func_tbl->sensor_set_led_flash_mode== NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->sensor_set_led_flash_mode(s_ctrl, cdata.cfg.flash_mode);
++			break;
++
++		case CFG_SET_ANTIBANDING_CE1702:
++			//Set Antibanding for CE1702 by jungki.kim
++			if (s_ctrl->func_tbl->sensor_set_antibanding_ce1702== NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->sensor_set_antibanding_ce1702(s_ctrl, cdata.cfg.antibanding);
++			break;
++
++		case CFG_SET_AE_WINDOW:
++			//Set AE Window for CE1702 by jungki.kim
++			if (s_ctrl->func_tbl->sensor_set_ae_window == NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->sensor_set_ae_window(s_ctrl, cdata.cfg.ae_window);
++			break;
++
++		case CFG_SET_AEC_AWB_LOCK_CE1702:
++			//Support AEC/AWB Lock For CE1702 by jungki.kim
++			if (s_ctrl->func_tbl->sensor_set_aec_awb_lock == NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->sensor_set_aec_awb_lock(s_ctrl, cdata.cfg.aec_awb_lock);
++			break;
++
++		case CFG_GET_CAM_OPEN_MODE:
++			//                                                 
++			if (s_ctrl->func_tbl->sensor_get_cam_open_mode == NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->sensor_get_cam_open_mode(s_ctrl, cdata.cfg.cam_op_mode);
++			break;
++
++		case CFG_SET_EXIF_ROTATION:
++			//                                                         
++			if (s_ctrl->func_tbl->sensor_set_exif_rotation == NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->sensor_set_exif_rotation(s_ctrl, cdata.cfg.rotation);
++			break;
++
++		case CFG_SET_EXIF_GPS:
++			//                                                 
++			if (s_ctrl->func_tbl->sensor_set_exif_gps == NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->sensor_set_exif_gps(s_ctrl, &cdata.cfg.gps);
++			break;
++
++		case CFG_HDR_UPDATE:
++			if (s_ctrl->func_tbl->
++			sensor_hdr_update == NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			rc = s_ctrl->func_tbl->
++					sensor_hdr_update(
++					   s_ctrl,
++					   &(cdata.cfg.hdr_update_parm));
+ 			break;
+ 
+ 		case CFG_SENSOR_INIT:
+@@ -692,16 +967,130 @@
+ 				rc = -EFAULT;
+ 			break;
+ 
+-		case CFG_GET_CALIB_DATA:
+-			if (s_ctrl->func_tbl->sensor_get_eeprom_data == NULL) {
++		case CFG_POWER_UP:
++			pr_err("%s calling power up\n", __func__);
++			if (s_ctrl->func_tbl->sensor_power_up)
++				rc = s_ctrl->func_tbl->sensor_power_up(s_ctrl);
++			else
++				rc = -EFAULT;
++			break;
++
++		case CFG_POWER_DOWN:
++			if (s_ctrl->func_tbl->sensor_power_down)
++				rc = s_ctrl->func_tbl->sensor_power_down(
++					s_ctrl);
++			else
++				rc = -EFAULT;
++			break;
++                //Start :randy@qualcomm.com for calibration 2012.03.25
++                case CFG_GET_CALIB_DATA:
++                        if (s_ctrl->func_tbl->sensor_get_eeprom_data
++                                == NULL) {
++                                rc = -EFAULT;
++                                break;
++                        }
++                        rc = s_ctrl->func_tbl->sensor_get_eeprom_data(
++                                s_ctrl,
++                                &cdata);
++
++                        if (copy_to_user((void *)argp,
++                                &cdata,
++                                sizeof(cdata)))
++                                rc = -EFAULT;
++                        break;
++                //End :randy@qualcomm.com for calibration 2012.03.25
++
++		case CFG_SET_VISION_MODE:
++			if (s_ctrl->func_tbl->sensor_set_vision_mode)
++				rc = s_ctrl->func_tbl->sensor_set_vision_mode(
++					s_ctrl, cdata.cfg.vision_mode_enable);
++			else
++				rc = -EFAULT;
++				break;
++		case CFG_SET_VISION_AE:
++			if (s_ctrl->func_tbl->sensor_set_vision_ae_control)
++				rc = s_ctrl->func_tbl->
++					sensor_set_vision_ae_control(
++					s_ctrl, cdata.cfg.vision_ae);
++			else
++				rc = -EFAULT;
++			break;
++/*                                                                                             */
++		case CFG_SET_OBJECT_TRACKING:
++			if (s_ctrl->func_tbl->sensor_object_tracking== NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			s_ctrl->func_tbl->sensor_object_tracking(s_ctrl,&cdata.cfg.rect_info);
++			break;
++/*                                                                                             */
++
++/*                                                                                          */
++		case CFG_SET_DIM_INFO:
++			if (s_ctrl->func_tbl->sensor_dim_info== NULL) {
+ 				rc = -EFAULT;
+ 				break;
+ 			}
+-			rc = s_ctrl->func_tbl->sensor_get_eeprom_data(s_ctrl, &cdata);
++			s_ctrl->func_tbl->sensor_dim_info(s_ctrl,&cdata.cfg.dimension);
++			break;
++/*                                                                                          */
++
++/*                                                                           */
++		case CFG_SET_ISO:
++			if(s_ctrl->func_tbl->sensor_set_iso == NULL){
++				rc = -EFAULT;
++				break;
++				}
++			rc = s_ctrl->func_tbl->sensor_set_iso(s_ctrl, cdata.cfg.iso_type);
++				break;
++/*                                                                         */
++
++/*                                                                               */
++		case CFG_SET_MANUAL_SCENE_MODE:
++			if(s_ctrl->func_tbl->sensor_set_manual_scene_mode== NULL){
++				rc = -EFAULT;
++				break;
++				}
++			rc = s_ctrl->func_tbl->sensor_set_manual_scene_mode(s_ctrl, cdata.cfg.scene_mode);
++			break;
++/*                                                                             */
+ 
+-			if (copy_to_user((void *)argp, &cdata, sizeof(cdata)))
++/*                                                                      */
++		case CFG_SET_GYRO_DATA:
++			if (s_ctrl->func_tbl->sensor_set_gyro_data) 
++				rc = s_ctrl->func_tbl->sensor_set_gyro_data(s_ctrl,(uint8_t *)cdata.cfg.setting);
++			else
+ 				rc = -EFAULT;
+ 			break;
++/*                                                                    */
++
++/*                                                                            */
++		case CFG_SET_WDR:
++			if(s_ctrl->func_tbl->sensor_set_wdr == NULL){
++				rc = -EFAULT;
++				break;
++				}
++			rc = s_ctrl->func_tbl->sensor_set_wdr(s_ctrl, cdata.cfg.wdr_mode);
++			break;		
++/*                                                                          */
++/*                                                                                            */
++		case CFG_SET_ASD:
++			if(s_ctrl->func_tbl->sensor_set_asd_enable== NULL){
++				rc = -EFAULT;
++				break;
++				}
++			rc = s_ctrl->func_tbl->sensor_set_asd_enable(s_ctrl, cdata.cfg.asd_onoff);
++			break;	
++/*                                                                                          */
++/*                                                                  */
++		case CFG_SET_EXIF_THUMBNAIL_SIZE:
++			if (s_ctrl->func_tbl->sensor_set_exif_thumbnail_size == NULL) {
++				rc = -EFAULT;
++				break;
++			}
++			s_ctrl->func_tbl->sensor_set_exif_thumbnail_size(s_ctrl, &cdata.cfg.dimension);
++			break;
++/*                                                                  */
+ 
+ 		default:
+ 			rc = -EFAULT;
