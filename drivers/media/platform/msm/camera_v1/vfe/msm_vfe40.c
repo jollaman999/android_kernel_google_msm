@@ -1002,7 +1002,7 @@ static unsigned long vfe40_stats_flush_enqueue(
 		stats_buf = &bufq->bufs[i];
 		rc = vfe40_ctrl->stats_ops.enqueue_buf(
 				vfe40_ctrl->stats_ops.stats_ctrl,
-				&(stats_buf->info), NULL, -1);
+				&(stats_buf->info), NULL);
 		if (rc < 0) {
 			pr_err("%s: dq stats buf (type = %d) err = %d",
 				 __func__, stats_type, rc);
@@ -4698,7 +4698,7 @@ int msm_axi_subdev_isr_routine(struct v4l2_subdev *sd,
 
 static long vfe_stats_bufq_sub_ioctl(
 	struct vfe40_ctrl_type *vfe_ctrl,
-	struct msm_vfe_cfg_cmd *cmd, void *ion_client, int domain_num)
+	struct msm_vfe_cfg_cmd *cmd, void *ion_client)
 {
 	long rc = 0;
 	switch (cmd->cmd_type) {
@@ -4747,7 +4747,7 @@ static long vfe_stats_bufq_sub_ioctl(
 	rc = vfe_ctrl->stats_ops.enqueue_buf(
 			&vfe_ctrl->stats_ctrl,
 			(struct msm_stats_buf_info *)cmd->value,
-			vfe_ctrl->stats_ops.client, domain_num);
+			vfe_ctrl->stats_ops.client);
 	break;
 	case VFE_CMD_STATS_FLUSH_BUFQ:
 	{
@@ -4836,7 +4836,7 @@ static long msm_vfe_subdev_ioctl(struct v4l2_subdev *sd,
 	case VFE_CMD_STATS_UNREGBUF:
 		/* for easy porting put in one envelope */
 		rc = vfe_stats_bufq_sub_ioctl(vfe40_ctrl,
-				cmd, vfe_params->data, pmctl->domain_num);
+				cmd, vfe_params->data);
 		return rc;
 	default:
 		if (cmd->cmd_type != CMD_CONFIG_PING_ADDR &&
@@ -4855,7 +4855,6 @@ static long msm_vfe_subdev_ioctl(struct v4l2_subdev *sd,
 		cmd->cmd_type != CMD_VFE_COUNT_PIX_SOF_ENABLE) {
 			if (copy_from_user(&vfecmd,
 					(void __user *)(cmd->value),
-					sizeof(vfecmd))) {
 				pr_err("%s %d: copy_from_user failed\n",
 					__func__, __LINE__);
 				return -EFAULT;

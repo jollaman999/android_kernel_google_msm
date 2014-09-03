@@ -1,0 +1,10 @@
+--- drivers/media/platform/msm/camera_v1/gemini/msm_gemini_hw_reg.h
++++ drivers/media/platform/msm/camera_v1/gemini/msm_gemini_hw_reg.h
+@@ -171,6 +171,6 @@
+ #define HWIO_JPEG_IRQ_STATUS_RMSK 0xffffffff
+ 
+ #define HWIO_JPEG_STATUS_ENCODE_OUTPUT_SIZE_ADDR (GEMINI_REG_BASE + 0x00000034)
+-#define HWIO_JPEG_STATUS_ENCODE_OUTPUT_SIZE_RMSK 0xffffff
++#define HWIO_JPEG_STATUS_ENCODE_OUTPUT_SIZE_RMSK 0xffffffff
+ 
+ #endif /* MSM_GEMINI_HW_REG_H */

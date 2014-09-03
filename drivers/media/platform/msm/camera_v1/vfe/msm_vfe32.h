@@ -1034,14 +1034,14 @@ struct axi_ctrl_t {
 	struct clk *vfe_clk[3];
 	struct tasklet_struct vfe32_tasklet;
 	struct vfe_share_ctrl_t *share_ctrl;
-	struct device *iommu_ctx_imgwr;
-	struct device *iommu_ctx_misc;
+        struct device *iommu_ctx_imgwr;
+        struct device *iommu_ctx_misc;
 	uint32_t simultaneous_sof_frame;
-/* LGE_CHANGE_S, camera recovery patch, 2013.2.4, jungki.kim[Start] */
+/*                                                                  */
 #ifdef LGE_GK_CAMERA_BSP
 	struct mutex state_mutex;
 #endif
-/* LGE_CHANGE_E, camera recovery patch, 2013.2.4, jungki.kim[End] */
+/*                                                                */
 };
 
 struct vfe32_ctrl_type {

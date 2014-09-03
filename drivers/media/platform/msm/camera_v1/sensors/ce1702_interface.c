@@ -10,7 +10,7 @@
  * GNU General Public License for more details.
  *
  */
-//youngil.yun@lge.com 2012-07-09 - start
+//                                      
 #include "ce1702_interface.h"
 
 static int ce1702_spi_probe(struct spi_device *spi);
@@ -47,7 +47,7 @@ static unsigned char rdata_buf[8196] = {0};
 int dest_location_firmware = CE1702_NANDFLASH; //CE1702_SDCARD2;    // system , sdcard
 int ce1702_irq_log;
 
-//youngil.yun@lge.com 2012-07-09 - start
+//                                      
 
 //inline void init_suspend(void)
 void init_suspend(void)
@@ -273,7 +273,7 @@ static int32_t ce1702_i2c_txdata(unsigned short saddr,
 
 	if (i2c_transfer(ce1702_s_interface_ctrl->sensor_i2c_client->client->adapter, msg, 1) < 0) {
 		LDBGE("ce1702_i2c_txdata failed\n");
-		return -EIO;
+		return -EFAULT;
 	}
 
 	return CE1702_OK;
@@ -282,7 +282,7 @@ static int32_t ce1702_i2c_txdata(unsigned short saddr,
 int32_t ce1702_i2c_write(unsigned short saddr,
 	unsigned short waddr, unsigned char *wdata, uint32_t length)
 {
-	int32_t rc = -EIO;
+	int32_t rc = -EFAULT;
 	uint8_t *buf, small_buf[16];
 	uint32_t wlength = length + 1;
 
@@ -301,7 +301,7 @@ int32_t ce1702_i2c_write(unsigned short saddr,
 	{
 		LDBGE("%s : mem alloc fail !! \n",__func__);
 		kfree(buf);
-		return -EIO;
+		return -EFAULT;
 	}
 #endif
 	buf[0] = (uint8_t)waddr;
@@ -348,7 +348,7 @@ static int ce1702_i2c_rxdata(unsigned short saddr, unsigned char *cmd_data, int 
 
 	if (i2c_transfer(ce1702_s_interface_ctrl->sensor_i2c_client->client->adapter, msgs, 2) < 0) {
 		LDBGE("ce1702_i2c_rxdata failed!\n");
-		return -EIO;
+		return -EFAULT;
 	}
 
 	return 0;
@@ -374,7 +374,7 @@ int32_t ce1702_i2c_read(unsigned short   saddr,
 	{
 		LDBGE("%s : mem alloc fail !! \n",__func__);
 		kfree(cmd_buf);
-		return -EIO;
+		return -EFAULT;
 	}
 
 	if(cmd_len)
@@ -489,7 +489,7 @@ static long CE_FwUpload(uint8_t *ubFileName, uint8_t ubCmdID, uint8_t ubWait)
 	file_size = (unsigned)sys_lseek(fd, (off_t)0, 2);
 	if (file_size == 0) {
 		LDBGE("%s: File size is 0\n",__func__);
-		rc = -EIO;
+		rc = -EFAULT;
 		sys_close(fd);
 		set_fs(old_fs);
 		goto fwupload_fail;
@@ -579,10 +579,10 @@ static long CE_FwUpload(uint8_t *ubFileName, uint8_t ubCmdID, uint8_t ubWait)
 
 fwupload_fail :
 	LDBGE("CE_FwUpload : fwupload fail !!\n");
-	/* LGE_CHANGE_S, if there is no ISP binary, I am also panic!, 2013.5.3, jungki.kim[Start] */
+	/*                                                                                        */
 	dump_stack();
 	BUG_ON(1);
-	/* LGE_CHANGE_E, if there is no ISP binary, I am also panic!, 2013.5.3, jungki.kim[End] */
+	/*                                                                                      */
 	return rc ;
 
 }
@@ -680,7 +680,7 @@ long ce1702_check_flash_version(void)
 	file_size = (unsigned)sys_lseek(fd, (off_t)0, SEEK_END);
 	if (file_size == 0 || file_size < 8) {
 		LDBGE("%s: %s file size[%d] mismatching error !!!\n", __func__, CE1702_FLASH_BIN02_FILE, file_size);
-		rc = -EIO;
+		rc = -EFAULT;
 		sys_close(fd);
 		goto version_fail;
 	}
@@ -716,7 +716,7 @@ long ce1702_check_flash_version(void)
 	else
 	{
 		LDBGE(">>>>>>>>>>>> Lower FW Version !!>>>>>>>>>>>>\n");
-		rc = -EIO;
+		rc = -EFAULT;
 	}
 
 	sys_close(fd);
@@ -754,7 +754,7 @@ long ce1702_isp_fw_full_upload(void)
 	//[2-1] ISP FW uploader
 	if(CE_FwUpload(CE1702_FLASH_BIN00_FILE, 0xF2, 100)==0)
 	{
-		prevent_suspend(); //LGE_CHANGE_S [muhan2k] 2009-11-9 Android PJT
+		prevent_suspend(); //                                            
 
 		mdelay(100);
 		rc = CE_FwUpload(CE1702_FLASH_BIN01_FILE, 0xF4, 100);
@@ -778,7 +778,7 @@ long ce1702_isp_fw_full_upload(void)
 		}else
 		{
 			LDBGE(">>>>>>>	NV update check [1] ::: ISP FW uploader upload fail \n");
-			rc = -EIO;
+			rc = -EFAULT;
 			goto full_upload_fail;
 		}
 
@@ -809,7 +809,7 @@ long ce1702_isp_fw_full_upload(void)
 		}else
 		{
 			LDBGE(">>>>>>>	NV update check [2] ::: ISP camera FW upload fail \n");
-			rc = -EIO;
+			rc = -EFAULT;
 			goto full_upload_fail;
 		}
 		mdelay(9 * 1000);	//FROM Write Time waiting
@@ -833,27 +833,27 @@ long ce1702_isp_fw_full_upload(void)
 		}else
 		{
 			LDBGE(">>>>>>>	NV update check [3] ::: ISP camera FROM write fail \n");
-			rc = -EIO;
+			rc = -EFAULT;
 			goto full_upload_fail;
 		}
 
 		mdelay(50);
 
 		ISP_BIN_DOWN_FLAG= 1;	//ISP bin download end without error
-		allow_suspend();  //LGE_CHANGE_S [muhan2k] 2009-11-9 Android PJT
+		allow_suspend();  //                                            
 	}// SUB-PCB(ISP) Exist Test
 	else
 	{
 		LDBGE("========== NO Sub-PCB or ISP Broken!!!========== \n");
 		ISP_BIN_DOWN_FLAG= 2;	//ISP bin No download
-		rc = -EIO;// IF ISP is not esist then FW update No needs.
+		rc = -EFAULT;// IF ISP is not esist then FW update No needs.
 	}
 
 	return rc;
 
 full_upload_fail :
 	LDBGE("========== CE_FwUpload() fail !!! rc = %ld ========== \n", rc);
-	allow_suspend();  //LGE_CHANGE_S [muhan2k] 2009-11-9 Android PJT
+	allow_suspend();  //                                            
 	ISP_BIN_DOWN_FLAG = 2;	//ISP bin download fail during download !!! should be tried again !!!
 	return rc;
 
