@@ -401,7 +401,7 @@ static unsigned long vfe31_stats_flush_enqueue(
 		stats_buf = &bufq->bufs[i];
 		rc = vfe31_ctrl->stats_ops.enqueue_buf(
 				vfe31_ctrl->stats_ops.stats_ctrl,
-				&(stats_buf->info), NULL);
+				&(stats_buf->info), NULL, -1);
 		if (rc < 0) {
 			pr_err("%s: dq stats buf (type = %d) err = %d",
 				__func__, stats_type, rc);
@@ -412,7 +412,7 @@ static unsigned long vfe31_stats_flush_enqueue(
 }
 
 static unsigned long vfe31_stats_unregbuf(
-	struct msm_stats_reqbuf *req_buf)
+	struct msm_stats_reqbuf *req_buf, int domain_num)
 {
 	int i = 0, rc = 0;
 
@@ -420,7 +420,7 @@ static unsigned long vfe31_stats_unregbuf(
 		rc = vfe31_ctrl->stats_ops.buf_unprepare(
 			vfe31_ctrl->stats_ops.stats_ctrl,
 			req_buf->stats_type, i,
-			vfe31_ctrl->stats_ops.client);
+			vfe31_ctrl->stats_ops.client, domain_num);
 		if (rc < 0) {
 			pr_err("%s: unreg stats buf (type = %d) err = %d",
 				__func__, req_buf->stats_type, rc);
@@ -3296,7 +3296,7 @@ static void vfe31_process_stats(uint32_t status_bits)
 }
 
 static long vfe_stats_bufq_sub_ioctl(struct msm_vfe_cfg_cmd *cmd,
-	void *ion_client)
+	void *ion_client, int domain_num)
 {
 	long rc = 0;
 	switch (cmd->cmd_type) {
@@ -3344,7 +3344,7 @@ static long vfe_stats_bufq_sub_ioctl(struct msm_vfe_cfg_cmd *cmd,
 		}
 		rc = vfe31_ctrl->stats_ops.enqueue_buf(&vfe31_ctrl->stats_ctrl,
 				(struct msm_stats_buf_info *)cmd->value,
-				vfe31_ctrl->stats_ops.client);
+				vfe31_ctrl->stats_ops.client, domain_num);
 	break;
 	case VFE_CMD_STATS_FLUSH_BUFQ: {
 		struct msm_stats_flush_bufq *flush_req = NULL;
@@ -3376,7 +3376,7 @@ static long vfe_stats_bufq_sub_ioctl(struct msm_vfe_cfg_cmd *cmd,
 			rc = -EINVAL ;
 			goto end;
 		}
-		rc = vfe31_stats_unregbuf(req_buf);
+		rc = vfe31_stats_unregbuf(req_buf, domain_num);
 	}
 	break;
 	default:
@@ -3630,7 +3630,8 @@ static long msm_vfe_subdev_ioctl(struct v4l2_subdev *sd,
 	case VFE_CMD_STATS_FLUSH_BUFQ:
 	case VFE_CMD_STATS_UNREGBUF:
 		/* for easy porting put in one envelope */
-		rc = vfe_stats_bufq_sub_ioctl(cmd, vfe_params->data);
+		rc = vfe_stats_bufq_sub_ioctl(cmd, vfe_params->data,
+			pmctl->domain_num);
 		return rc;
 	default:
 		if (cmd->cmd_type != CMD_CONFIG_PING_ADDR &&

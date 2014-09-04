@@ -1227,8 +1227,8 @@ enum msm_v4l2_power_line_frequency {
 };
 
 #define CAMERA_ISO_TYPE_AUTO           0
-#define CAMEAR_ISO_TYPE_HJR            1
-#define CAMEAR_ISO_TYPE_100            2
+#define CAMERA_ISO_TYPE_HJR            1
+#define CAMERA_ISO_TYPE_100            2
 #define CAMERA_ISO_TYPE_200            3
 #define CAMERA_ISO_TYPE_400            4
 #define CAMERA_ISO_TYPE_800            5
