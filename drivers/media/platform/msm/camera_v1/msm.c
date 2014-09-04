@@ -991,7 +991,7 @@ static int msm_open(struct file *f)
 		rc = pmctl->mctl_open(pmctl, MSM_APPS_ID_V4L2);
 		if (rc < 0) {
 			pr_err("%s: HW open failed rc = 0x%x\n",  __func__, rc);
-			rc = -EFAULT;  /*                                                                      */
+			rc = -EIO;  /*                                                                      */
 			goto mctl_open_failed;
 		}
 		pmctl->pcam_ptr = pcam;

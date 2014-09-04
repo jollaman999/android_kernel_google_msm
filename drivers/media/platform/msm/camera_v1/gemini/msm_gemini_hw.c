@@ -150,7 +150,6 @@ void msm_gemini_hw_fe_buffer_update(struct msm_gemini_hw_buf *p_input,
 
 	struct msm_gemini_hw_cmd *hw_cmd_p;
 
-	GMN_DBG("%s:%d] pingpong index %d", __func__, __LINE__, pingpong_index);
 	if (pingpong_index == 0) {
 		hw_cmd_p = &hw_cmd_fe_ping_update[0];
 		n_reg_val = ((((p_input->num_of_mcu_rows - 1) <<
@@ -298,8 +297,7 @@ void msm_gemini_hw_we_buffer_update(struct msm_gemini_hw_buf *p_input,
 
 	struct msm_gemini_hw_cmd *hw_cmd_p;
 
-	pr_debug("%s:%d] pingpong index %d", __func__, __LINE__,
-		pingpong_index);
+	GMN_DBG("%s:%d] pingpong index %d", __func__, __LINE__, pingpong_index);
 	if (pingpong_index == 0) {
 		hw_cmd_p = &hw_cmd_we_ping_update[0];
 

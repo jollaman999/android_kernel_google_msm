@@ -944,6 +944,8 @@ int msm_gemini_start(struct msm_gemini_device *pgmn_dev, void * __user arg)
 				__func__, __LINE__);
 			/* fall through to configure same buffer */
 		}
+		msm_gemini_core_we_buf_update(&out_buf);
+		//msm_gemini_io_dump(0x150);
 	}
 
 	rc = msm_gemini_ioctl_hw_cmds(pgmn_dev, arg);

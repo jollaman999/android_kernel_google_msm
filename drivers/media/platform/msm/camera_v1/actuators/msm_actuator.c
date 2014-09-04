@@ -13,8 +13,6 @@
 #include <linux/module.h>
 #include "msm_actuator.h"
 
-#define ACT_STOP_POS            10
-
 static struct msm_actuator_ctrl_t msm_actuator_t;
 static struct msm_actuator msm_vcm_actuator_table;
 static struct msm_actuator msm_piezo_actuator_table;
