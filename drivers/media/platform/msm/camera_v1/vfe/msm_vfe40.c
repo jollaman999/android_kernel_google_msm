@@ -4855,7 +4855,7 @@ static long msm_vfe_subdev_ioctl(struct v4l2_subdev *sd,
 		cmd->cmd_type != CMD_VFE_COUNT_PIX_SOF_ENABLE) {
 			if (copy_from_user(&vfecmd,
 					(void __user *)(cmd->value),
- 					sizeof(vfecmd))) {
+					sizeof(vfecmd))) {
 				pr_err("%s %d: copy_from_user failed\n",
 					__func__, __LINE__);
 				return -EFAULT;

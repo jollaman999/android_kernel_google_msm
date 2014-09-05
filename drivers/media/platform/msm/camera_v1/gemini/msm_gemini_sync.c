@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2013, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2010-2012, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -16,8 +16,6 @@
 #include <linux/uaccess.h>
 #include <linux/slab.h>
 #include <media/msm_gemini.h>
-#include <mach/msm_bus.h>
-#include <mach/msm_bus_board.h>
 #include "msm_gemini_sync.h"
 #include "msm_gemini_core.h"
 #include "msm_gemini_platform.h"
@@ -289,7 +287,7 @@ int msm_gemini_get_out_buffer(struct msm_gemini_device *pgmn_dev,
 	buf_size = min(bytes_remaining, pgmn_dev->max_out_size);
 
 	pgmn_dev->out_frag_cnt++;
-	pr_debug("%s:%d] buf_size[%d] %d", __func__, __LINE__,
+	pr_err("%s:%d] buf_size[%d] %d", __func__, __LINE__,
 		pgmn_dev->out_frag_cnt, buf_size);
 	p_outbuf->y_len = buf_size;
 	p_outbuf->y_buffer_addr = pgmn_dev->out_buf.y_buffer_addr +
@@ -306,9 +304,9 @@ int msm_gemini_outmode_single_we_pingpong_irq(
 	struct msm_gemini_core_buf out_buf;
 	int frame_done = buf_in &&
 		buf_in->vbuf.type == MSM_GEMINI_EVT_FRAMEDONE;
-	pr_debug("%s:%d] framedone %d", __func__, __LINE__, frame_done);
+	pr_err("%s:%d] framedone %d", __func__, __LINE__, frame_done);
 	if (!pgmn_dev->out_buf_set) {
-		pr_err("%s:%d] output buffer not set",
+		GMN_PR_ERR("%s:%d] output buffer not set",
 			__func__, __LINE__);
 		return -EFAULT;
 	}
@@ -319,7 +317,7 @@ int msm_gemini_outmode_single_we_pingpong_irq(
 		rc = msm_gemini_q_in_buf(&pgmn_dev->output_rtn_q,
 			&pgmn_dev->out_buf);
 		if (rc) {
-			pr_err("%s:%d] cannot queue the output buffer",
+			GMN_PR_ERR("%s:%d] cannot queue the output buffer",
 				 __func__, __LINE__);
 			return -EFAULT;
 		}
@@ -327,7 +325,7 @@ int msm_gemini_outmode_single_we_pingpong_irq(
 		/* reset the output buffer since the ownership is
 			transferred to the rtn queue */
 		if (!rc)
-			pgmn_dev->out_buf_set = 0;
+		  pgmn_dev->out_buf_set = 0;
 	} else {
 		/* configure ping/pong */
 		rc = msm_gemini_get_out_buffer(pgmn_dev, &out_buf);
@@ -345,7 +343,7 @@ int msm_gemini_we_pingpong_irq(struct msm_gemini_device *pgmn_dev,
 	int rc = 0;
 	struct msm_gemini_core_buf *buf_out;
 
-	pr_debug("%s:%d] Enter mode %d", __func__, __LINE__,
+	GMN_DBG("%s:%d] Enter mode %d", __func__, __LINE__,
 		pgmn_dev->out_mode);
 
 	if (pgmn_dev->out_mode == MSM_GMN_OUTMODE_SINGLE)
@@ -353,11 +351,11 @@ int msm_gemini_we_pingpong_irq(struct msm_gemini_device *pgmn_dev,
 			buf_in);
 
 	if (buf_in) {
-		pr_debug("%s:%d] 0x%08x %d\n", __func__, __LINE__,
+		GMN_DBG("%s:%d] 0x%08x %d\n", __func__, __LINE__,
 			(int) buf_in->y_buffer_addr, buf_in->y_len);
 		rc = msm_gemini_q_in_buf(&pgmn_dev->output_rtn_q, buf_in);
 	} else {
-		pr_debug("%s:%d] no output return buffer\n", __func__,
+		GMN_DBG("%s:%d] no output return buffer\n", __func__,
 			__LINE__);
 		rc = -1;
 		return rc;
@@ -370,7 +368,7 @@ int msm_gemini_we_pingpong_irq(struct msm_gemini_device *pgmn_dev,
 		kfree(buf_out);
 	} else {
 		msm_gemini_core_we_buf_reset(buf_in);
-		pr_debug("%s:%d] no output buffer\n", __func__, __LINE__);
+		GMN_DBG("%s:%d] no output buffer\n", __func__, __LINE__);
 		rc = -2;
 	}
 
@@ -832,17 +830,15 @@ int msm_gemini_ioctl_hw_cmds(struct msm_gemini_device *pgmn_dev,
 		GMN_PR_ERR("%s:%d] failed\n", __func__, __LINE__);
 		return -EFAULT;
 	}
-
-    if ((m == 0) || (m > ((UINT32_MAX-sizeof(struct msm_gemini_hw_cmds))/
-           sizeof(struct msm_gemini_hw_cmd)))) {
-           GMN_PR_ERR("%s:%d] outof range of hwcmds\n",
-            __func__, __LINE__);
-           return -EINVAL;
-    }
+	if ((m == 0) || (m > ((UINT32_MAX-sizeof(struct msm_gemini_hw_cmds))/
+		sizeof(struct msm_gemini_hw_cmd)))) {
+		GMN_PR_ERR("%s:%d] outof range of hwcmds\n",
+			 __func__, __LINE__);
+		return -EINVAL;
+	}
 
 	len = sizeof(struct msm_gemini_hw_cmds) +
 		sizeof(struct msm_gemini_hw_cmd) * (m - 1);
-
 	hw_cmds_p = kmalloc(len, GFP_KERNEL);
 	if (!hw_cmds_p) {
 		GMN_PR_ERR("%s:%d] no mem %d\n", __func__, __LINE__, len);
@@ -904,10 +900,8 @@ int msm_gemini_start(struct msm_gemini_device *pgmn_dev, void * __user arg)
 				buf_out_free[0]->y_buffer_addr +=
 					buf_out_free[0]->y_len;
 				msm_gemini_core_we_buf_update(buf_out_free[0]);
-				/*
-				 * since ping and pong are same buf
-				 * release only once
-				 */
+				/* since ping and pong are same buf
+				*  release only once */
 				release_buf = 0;
 			} else {
 				GMN_DBG("%s:%d] no output buffer\n",
@@ -919,10 +913,8 @@ int msm_gemini_start(struct msm_gemini_device *pgmn_dev, void * __user arg)
 			kfree(buf_out_free[i]);
 	} else {
 		struct msm_gemini_core_buf out_buf;
-		/*
-		 * Since the same buffer is fragmented, p2v need not be
-		 * called for all the buffers
-		 */
+		/* Since the same buffer is fragmented, p2v need not be
+		called for all the buffers */
 		release_buf = 0;
 		if (!pgmn_dev->out_buf_set) {
 			GMN_PR_ERR("%s:%d] output buffer not set",
@@ -985,7 +977,7 @@ int msm_gemini_ioctl_set_outmode(struct msm_gemini_device *pgmn_dev,
 	GMN_DBG("%s:%d] mode %d", __func__, __LINE__, mode);
 
 	if ((mode == MSM_GMN_OUTMODE_FRAGMENTED)
-		|| (mode == MSM_GMN_OUTMODE_SINGLE))
+		||(mode == MSM_GMN_OUTMODE_SINGLE))
 		pgmn_dev->out_mode = mode;
 	return rc;
 }
@@ -1013,12 +1005,12 @@ long __msm_gemini_ioctl(struct msm_gemini_device *pgmn_dev,
 		break;
 
 	case MSM_GMN_IOCTL_INPUT_BUF_ENQUEUE:
-		if (pgmn_dev->out_mode == MSM_GMN_OUTMODE_FRAGMENTED)
-			rc = msm_gemini_output_buf_enqueue(pgmn_dev,
-				(void __user *) arg);
-		else
-			rc = msm_gemini_set_output_buf(pgmn_dev,
-				(void __user *) arg);
+               if (pgmn_dev->out_mode == MSM_GMN_OUTMODE_FRAGMENTED)
+                       rc = msm_gemini_output_buf_enqueue(pgmn_dev,
+                               (void __user *) arg);
+               else
+                       rc = msm_gemini_set_output_buf(pgmn_dev,
+                               (void __user *) arg);
 		break;
 
 	case MSM_GMN_IOCTL_INPUT_GET:

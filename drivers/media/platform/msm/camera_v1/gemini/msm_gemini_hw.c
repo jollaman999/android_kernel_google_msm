@@ -1,4 +1,4 @@
-/* Copyright (c) 2010,2013 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2010, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -507,7 +507,7 @@ void msm_gemini_io_dump(int size)
 	int i;
 	u32 *p = (u32 *) addr;
 	u32 data;
-	pr_info("%s: %p %d reg_size %d\n", __func__, addr, size,
+	pr_err("%s: %p %d reg_size %d\n", __func__, addr, size,
 							gemini_region_size);
 	line_str[0] = '\0';
 	p_str = line_str;
@@ -520,13 +520,13 @@ void msm_gemini_io_dump(int size)
 		snprintf(p_str, 12, "%08x ", data);
 		p_str += 9;
 		if ((i + 1) % 4 == 0) {
-			pr_info("%s\n", line_str);
+			pr_err("%s\n", line_str);
 			line_str[0] = '\0';
 			p_str = line_str;
 		}
 	}
 	if (line_str[0] != '\0')
-		pr_info("%s\n", line_str);
+		pr_err("%s\n", line_str);
 }
 #else
 void msm_gemini_io_dump(int size)
