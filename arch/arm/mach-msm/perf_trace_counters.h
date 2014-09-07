@@ -29,6 +29,7 @@
 #include <linux/sched.h>
 #include <linux/cpumask.h>
 #include <linux/tracepoint.h>
+#include <linux/cpu.h>
 #include <mach/msm-krait-l2-accessors.h>
 
 DECLARE_PER_CPU(u32, previous_ccnt);

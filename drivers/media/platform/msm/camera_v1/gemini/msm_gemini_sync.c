@@ -1005,12 +1005,8 @@ long __msm_gemini_ioctl(struct msm_gemini_device *pgmn_dev,
 		break;
 
 	case MSM_GMN_IOCTL_INPUT_BUF_ENQUEUE:
-               if (pgmn_dev->out_mode == MSM_GMN_OUTMODE_FRAGMENTED)
-                       rc = msm_gemini_output_buf_enqueue(pgmn_dev,
-                               (void __user *) arg);
-               else
-                       rc = msm_gemini_set_output_buf(pgmn_dev,
-                               (void __user *) arg);
+		rc = msm_gemini_input_buf_enqueue(pgmn_dev,
+			(void __user *) arg);
 		break;
 
 	case MSM_GMN_IOCTL_INPUT_GET:

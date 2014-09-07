@@ -499,7 +499,6 @@ int msm_gemini_hw_exec_cmds(struct msm_gemini_hw_cmd *hw_cmd_p, uint32_t m_cmds)
 	return is_copy_to_user;
 }
 
-#ifdef MSM_GMN_DBG_DUMP
 void msm_gemini_io_dump(int size)
 {
 	char line_str[128], *p_str;
@@ -528,9 +527,3 @@ void msm_gemini_io_dump(int size)
 	if (line_str[0] != '\0')
 		pr_err("%s\n", line_str);
 }
-#else
-void msm_gemini_io_dump(int size)
-{
-
-}
-#endif

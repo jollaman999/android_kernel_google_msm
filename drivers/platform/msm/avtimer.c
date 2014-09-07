@@ -223,7 +223,7 @@ static long avtimer_ioctl(struct file *file, unsigned int ioctl_num,
 		}
 		if (!p_avtimer_lsw || !p_avtimer_msw) {
 			pr_err("ioremap failed\n");
-			return -EFAULT;
+			return -EIO;
 		}
 		do {
 			avtimer_msw_1st = ioread32(p_avtimer_msw);

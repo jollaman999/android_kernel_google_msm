@@ -69,15 +69,15 @@ static struct msm_camera_i2c_reg_conf imx119_groupoff_settings[] = {
 };
 
 static struct msm_camera_i2c_reg_conf imx119_prev_settings[] = {
-// Start LGE_BSP_CAMERA::seongjo.kim@lge.com 2012-06-11 VT_Rotate_in_KDDI
-// Start LGE_BSP_CAMERA::seongjo.kim@lge.com 2012-06-05 VT_Rotate_in_DOCOMO
+//                                                                       
+//                                                                         
 #if defined(CONFIG_MACH_APQ8064_J1D) || defined(CONFIG_MACH_APQ8064_J1KD)
 	{0x0101, 0x00}, /* read out direction */
 #else
 	{0x0101, 0x03}, /* read out direction */
 #endif
-// End LGE_BSP_CAMERA::seongjo.kim@lge.com 2012-06-05 VT_Rotate_in_DOCOMO
-// Start LGE_BSP_CAMERA::seongjo.kim@lge.com 2012-06-11 VT_Rotate_in_KDDI
+//                                                                       
+//                                                                       
 	{0x0340, 0x04},
 	{0x0341, 0x28},
 	{0x0346, 0x00},
@@ -123,9 +123,9 @@ static struct msm_camera_i2c_reg_conf imx119_recommend_settings[] = {
 	{0x308C, 0x00},
 	{0x302E, 0x8C},
 	{0x302F, 0x81},
-/* LGE_CHANGE
- * Fix the rotaion issue for Recorded moive on Windows. 
- * 2012-01-13, soojung.lim@lge.com
+/*           
+                                                        
+                                  
  */	
 	{0x0101, 0x03}, 
 };
@@ -228,9 +228,9 @@ static struct msm_sensor_fn_t imx119_func_tbl = {
 	.sensor_group_hold_off = msm_sensor_group_hold_off,
 	.sensor_set_fps = msm_sensor_set_fps,
 	.sensor_write_exp_gain = msm_sensor_write_exp_gain1,
-/* LGE_CHANGE_S, add snapshot exp gain, 2012-03-14, chaehee.lim@lge.com */
+/*                                                                      */
 	.sensor_write_snapshot_exp_gain = msm_sensor_write_exp_gain1,
-/* LGE_CHANGE_E, add snapshot exp gain, 2012-03-14, chaehee.lim@lge.com */
+/*                                                                      */
 	.sensor_setting = msm_sensor_setting,
 	.sensor_set_sensor_mode = msm_sensor_set_sensor_mode,
 	.sensor_mode_init = msm_sensor_mode_init,
@@ -238,9 +238,9 @@ static struct msm_sensor_fn_t imx119_func_tbl = {
 	.sensor_config = msm_sensor_config,
 	.sensor_power_up = imx119_sensor_power_up,
 	.sensor_power_down = imx119_sensor_power_down,
-//Start LGE_BSP_CAMERA : au069 patch - jonghwan.ko@lge.com
+//                                                        
 	.sensor_get_csi_params = msm_sensor_get_csi_params,
-//End  LGE_BSP_CAMERA : au069 patch - jonghwan.ko@lge.com
+//                                                       
 };
 
 static struct msm_sensor_reg_t imx119_regs = {
@@ -338,12 +338,12 @@ int32_t imx119_sensor_power_up(struct msm_sensor_ctrl_t *s_ctrl)
 		goto config_vreg_failed;
 	}
 
-/*LGE_CHANGE_START, youngwook.song@lge.com Power Sequence Reconfig. 2013-02-27 */
+/*                                                                             */
 	rc = gpio_request(MSM_CAM2_RST_EN, "VTCAM_RST_EN");
 	if (rc) {
 		LDBGE("%s: PM request gpio failed\n", __func__);
 	}
-/*LGE_CHANGE_END, youngwook.song@lge.com Power Sequence Reconfig. 2013-02-27 */
+/*                                                                           */
 	rc = msm_camera_enable_vreg(dev,
 			s_ctrl->sensordata->sensor_platform_info->cam_vreg,
 			s_ctrl->sensordata->sensor_platform_info->num_vreg,
@@ -354,14 +354,14 @@ int32_t imx119_sensor_power_up(struct msm_sensor_ctrl_t *s_ctrl)
 		LDBGE("%s: enable regulator failed\n", __func__);
 		goto enable_vreg_failed;
 	}
-/*LGE_CHANGE_START, youngwook.song@lge.com Power Sequence Reconfig. 2013-02-27 */
+/*                                                                             */
 	usleep(100);
 
 	rc =pm8xxx_gpio_config(MSM_CAM2_RST_EN, &gpio28_param);
 	if (rc) {
 		LDBGE("%s: pm8xxx_gpio_config on failed\n", __func__);
 	}
-/*LGE_CHANGE_END, youngwook.song@lge.com Power Sequence Reconfig. 2013-02-27 */
+/*                                                                           */
 	rc = gpio_direction_output(MSM_CAM2_RST_EN, 1);
 
 	rc = msm_camera_config_gpio_table(data, 1);
