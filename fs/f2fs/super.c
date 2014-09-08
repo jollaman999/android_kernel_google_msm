@@ -724,8 +724,8 @@ static int f2fs_remount(struct super_block *sb, int *flags, char *data)
 					!sbi->sm_info->cmd_control_info) {
 		err = create_flush_cmd_control(sbi);
 		if (err)
- 			goto restore_gc;
- 	}
+			goto restore_gc;
+	}
 skip:
 	/* Update the POSIXACL Flag */
 	 sb->s_flags = (sb->s_flags & ~MS_POSIXACL) |
@@ -1204,14 +1204,15 @@ free_sb_buf:
 free_sbi:
 	kfree(sbi);
 
-	f2fs_msg(sb, KERN_ERR, "mount failed - Chance 1/2");
 	/* give only one another chance */
 	if (retry) {
+		f2fs_msg(sb, KERN_ERR, "mount failed - Chance 1/2");
 		retry = 0;
 		shrink_dcache_sb(sb);
 		goto try_onemore;
 	}
 	f2fs_msg(sb, KERN_ERR, "mount failed - Chance 2/2");
+
 	return err;
 }
 
