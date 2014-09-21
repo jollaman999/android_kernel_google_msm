@@ -580,9 +580,11 @@ out:
 		set_ckpt_flags(sbi->ckpt, CP_ERROR_FLAG);
 		mutex_unlock(&sbi->cp_mutex);
 	} else if (need_writecp) {
-		f2fs_msg(sbi->sb, KERN_INFO, "recovery complete");
+		struct cp_control cpc = {
+			.reason = CP_SYNC,
+		};
 		mutex_unlock(&sbi->cp_mutex);
- 		write_checkpoint(sbi, false);
+		write_checkpoint(sbi, &cpc);
 	} else {
 		mutex_unlock(&sbi->cp_mutex);
 	}
