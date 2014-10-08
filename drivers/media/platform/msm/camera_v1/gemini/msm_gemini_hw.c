@@ -1,4 +1,4 @@
-/* Copyright (c) 2010, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2010,2013 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -297,7 +297,8 @@ void msm_gemini_hw_we_buffer_update(struct msm_gemini_hw_buf *p_input,
 
 	struct msm_gemini_hw_cmd *hw_cmd_p;
 
-	GMN_DBG("%s:%d] pingpong index %d", __func__, __LINE__, pingpong_index);
+	pr_debug("%s:%d] pingpong index %d", __func__, __LINE__,
+		pingpong_index);
 	if (pingpong_index == 0) {
 		hw_cmd_p = &hw_cmd_we_ping_update[0];
 
@@ -403,18 +404,6 @@ void msm_gemini_hw_write(struct msm_gemini_hw_cmd *hw_cmd_p)
 	writel(new_data, paddr);
 }
 
-void msm_gemini_io_w(uint32_t offset, uint32_t val)
-{
-	uint32_t *paddr = gemini_region_base + offset;
-	writel(val, paddr);
-}
-
-uint32_t msm_gemini_io_r(uint32_t offset)
-{
-	uint32_t *paddr = gemini_region_base + offset;
-	return readl(paddr);
-}
-
 int msm_gemini_hw_wait(struct msm_gemini_hw_cmd *hw_cmd_p, int m_us)
 {
 	int tm = hw_cmd_p->n;
@@ -499,6 +488,7 @@ int msm_gemini_hw_exec_cmds(struct msm_gemini_hw_cmd *hw_cmd_p, uint32_t m_cmds)
 	return is_copy_to_user;
 }
 
+#ifdef MSM_GMN_DBG_DUMP
 void msm_gemini_io_dump(int size)
 {
 	char line_str[128], *p_str;
@@ -506,7 +496,7 @@ void msm_gemini_io_dump(int size)
 	int i;
 	u32 *p = (u32 *) addr;
 	u32 data;
-	pr_err("%s: %p %d reg_size %d\n", __func__, addr, size,
+	pr_info("%s: %p %d reg_size %d\n", __func__, addr, size,
 							gemini_region_size);
 	line_str[0] = '\0';
 	p_str = line_str;
@@ -519,11 +509,17 @@ void msm_gemini_io_dump(int size)
 		snprintf(p_str, 12, "%08x ", data);
 		p_str += 9;
 		if ((i + 1) % 4 == 0) {
-			pr_err("%s\n", line_str);
+			pr_info("%s\n", line_str);
 			line_str[0] = '\0';
 			p_str = line_str;
 		}
 	}
 	if (line_str[0] != '\0')
-		pr_err("%s\n", line_str);
+		pr_info("%s\n", line_str);
 }
+#else
+void msm_gemini_io_dump(int size)
+{
+
+}
+#endif
