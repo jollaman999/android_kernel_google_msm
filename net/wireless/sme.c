@@ -222,9 +222,6 @@ void cfg80211_conn_work(struct work_struct *work)
 	mutex_lock(&rdev->devlist_mtx);
 
 	list_for_each_entry(wdev, &rdev->netdev_list, list) {
-		if (!wdev->netdev)
-			continue;
-
 		wdev_lock(wdev);
 		if (!netif_running(wdev->netdev)) {
 			wdev_unlock(wdev);
@@ -693,7 +690,14 @@ void __cfg80211_disconnected(struct net_device *dev, const u8 *ie,
 		return;
 
 #ifndef CONFIG_CFG80211_ALLOW_RECONNECT
+//LGE_CHANGE_S, moon-wifi@lge.com by wo0ngs 2012-09-25, Except: WLAN_REASON_UNSPECIFIED
+#if defined ( CONFIG_BCMDHD ) || defined( CONFIG_BCMDHD_MODULE )
+	if ((wdev->sme_state != CFG80211_SME_CONNECTED) 
+		&&  (reason != WLAN_REASON_UNSPECIFIED))
+#else
 	if (wdev->sme_state != CFG80211_SME_CONNECTED)
+#endif
+//LGE_CHANGE_E, moon-wifi@lge.com by wo0ngs 2012-09-25, Except: WLAN_REASON_UNSPECIFIED
 		return;
 #endif
 
