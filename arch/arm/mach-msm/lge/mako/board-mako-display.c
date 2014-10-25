@@ -915,11 +915,6 @@ static struct msm_panel_common_pdata mipi_lgit_pdata = {
 	.power_off_set_2 = lgit_power_off_set_2,
 	.power_off_set_size_1 = ARRAY_SIZE(lgit_power_off_set_1),
 	.power_off_set_size_2 =ARRAY_SIZE(lgit_power_off_set_2),
-
-#ifdef CONFIG_LGIT_VIDEO_WXGA_CABC
-	.bl_pwm_disable = lm3530_lcd_backlight_pwm_disable,
-#endif
-	.bl_on_status = lm3530_lcd_backlight_on_status,
 };
 
 static struct platform_device mipi_dsi_lgit_panel_device = {
