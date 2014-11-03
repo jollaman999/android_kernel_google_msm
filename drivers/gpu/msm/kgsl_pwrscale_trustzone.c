@@ -25,6 +25,7 @@
 #include "kgsl.h"
 #include "kgsl_pwrscale.h"
 #include "kgsl_device.h"
+#include "kgsl_trace.h"
 
 #ifdef CONFIG_MSM_KGSL_SIMPLE_GOV
 #include <linux/module.h>
@@ -247,6 +248,14 @@ static void tz_idle(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
     if (val) {
         kgsl_pwrctrl_pwrlevel_change(device,
                                      pwr->active_pwrlevel + val);
+		if (pwr->constraint.type != KGSL_CONSTRAINT_NONE) {
+			/* Trace the constraint being un-set by the driver */
+			trace_kgsl_constraint(device,
+				pwr->constraint.type,
+				pwr->active_pwrlevel, 0);
+			/*Invalidate the constraint set */
+			pwr->constraint.type = KGSL_CONSTRAINT_NONE;
+		}
         //pr_info("TZ idle stat: %d, TZ PL: %d, TZ out: %d\n",
         //                idle, pwr->active_pwrlevel, val);
     }

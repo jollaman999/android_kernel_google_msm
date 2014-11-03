@@ -1,4 +1,4 @@
-/* Copyright (c) 2002,2007-2013, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2002,2007-2014, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -127,8 +127,8 @@ struct kgsl_functable {
 	void (*drawctxt_destroy) (struct kgsl_context *context);
 	long (*ioctl) (struct kgsl_device_private *dev_priv,
 		unsigned int cmd, void *data);
-	int (*setproperty) (struct kgsl_device *device,
-		enum kgsl_property_type type, void *value,
+	int (*setproperty) (struct kgsl_device_private *dev_priv,
+		enum kgsl_property_type type, void __user *value,
 		unsigned int sizebytes);
 	int (*postmortem_dump) (struct kgsl_device *device, int manual);
 	void (*drawctxt_sched)(struct kgsl_device *device,
@@ -359,6 +359,7 @@ struct kgsl_process_private;
  * @pagefault: flag set if this context caused a pagefault.
  * @pagefault_ts: global timestamp of the pagefault, if KGSL_CONTEXT_PAGEFAULT
  * is set.
+ * @pwr_constraint: power constraint from userspace for this context
  */
 struct kgsl_context {
 	struct kref refcount;
@@ -374,6 +375,7 @@ struct kgsl_context {
 	struct list_head events;
 	struct list_head events_list;
 	unsigned int pagefault_ts;
+	struct kgsl_pwr_constraint pwr_constraint;
 };
 
 struct kgsl_process_private {
