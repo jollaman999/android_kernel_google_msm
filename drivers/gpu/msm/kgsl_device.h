@@ -375,6 +375,7 @@ struct kgsl_context {
 	struct list_head events;
 	struct list_head events_list;
 	unsigned int pagefault_ts;
+	unsigned int flags;
 	struct kgsl_pwr_constraint pwr_constraint;
 };
 
