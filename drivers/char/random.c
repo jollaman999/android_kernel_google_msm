@@ -267,6 +267,9 @@
 #include <asm/irq_regs.h>
 #include <asm/io.h>
 
+#define CREATE_TRACE_POINTS
+#include <trace/events/random.h>
+
 /*
  * Configuration information
  */
@@ -726,13 +729,13 @@ void add_device_randomness(const void *buf, unsigned int size)
 
 	trace_add_device_randomness(size, _RET_IP_);
 	spin_lock_irqsave(&input_pool.lock, flags);
-	_mix_pool_bytes(&input_pool, buf, size, NULL);
-	_mix_pool_bytes(&input_pool, &time, sizeof(time), NULL);
+	__mix_pool_bytes(&input_pool, buf, size, NULL);
+	__mix_pool_bytes(&input_pool, &time, sizeof(time), NULL);
 	spin_unlock_irqrestore(&input_pool.lock, flags);
 
 	spin_lock_irqsave(&nonblocking_pool.lock, flags);
-	_mix_pool_bytes(&nonblocking_pool, buf, size, NULL);
-	_mix_pool_bytes(&nonblocking_pool, &time, sizeof(time), NULL);
+	__mix_pool_bytes(&nonblocking_pool, buf, size, NULL);
+	__mix_pool_bytes(&nonblocking_pool, &time, sizeof(time), NULL);
 	spin_unlock_irqrestore(&nonblocking_pool.lock, flags);
 }
 EXPORT_SYMBOL(add_device_randomness);
