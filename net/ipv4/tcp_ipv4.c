@@ -1874,7 +1874,6 @@ static const struct tcp_sock_af_ops tcp_sock_ipv4_specific = {
 static int tcp_v4_init_sock(struct sock *sk)
 {
 	struct inet_connection_sock *icsk = inet_csk(sk);
-	struct tcp_sock *tp = tcp_sk(sk);
 
 	tcp_init_sock(sk);
 
