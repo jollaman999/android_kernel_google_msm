@@ -303,7 +303,7 @@ static int random_read_wakeup_thresh = 64;
 static int random_write_wakeup_thresh = 28 * OUTPUT_POOL_WORDS;
 
 /*
- * The minimum number of seconds between urandom pool resending.  We
+ * The minimum number of seconds between urandom pool reseeding.  We
  * do this to limit the amount of entropy that can be drained from the
  * input pool even if there are heavy demands on /dev/urandom.
  */
@@ -320,7 +320,7 @@ static int random_min_urandom_seed = 60;
  * Register.  (See M. Matsumoto & Y. Kurita, 1992.  Twisted GFSR
  * generators.  ACM Transactions on Modeling and Computer Simulation
  * 2(3):179-194.  Also see M. Matsumoto & Y. Kurita, 1994.  Twisted
- * GFSR generators II.  ACM Transactions on Mdeling and Computer
+ * GFSR generators II.  ACM Transactions on Modeling and Computer
  * Simulation 4:254-266)
  *
  * Thanks to Colin Plumb for suggesting this.
