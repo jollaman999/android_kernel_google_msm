@@ -277,10 +277,8 @@
 #define EXTRACT_SIZE		10
 
 /*
- * To allow fractional bits to be tracked, the following fields contain
- * this many fractional bits:
- *
- * entropy_count, trickle_thresh
+ * To allow fractional bits to be tracked, the entropy_count field is
+ * denominated in units of 1/8th bits.
  *
  * 2*(ENTROPY_SHIFT + log2(poolbits)) must <= 31, or the multiply in
  * credit_entropy_bits() needs to be 64 bits wide.
@@ -307,15 +305,6 @@ static int random_write_wakeup_thresh = 128;
  * input pool even if there are heavy demands on /dev/urandom.
  */
 static int random_min_urandom_seed = 60;
-
-/*
- * When the input pool goes over trickle_thresh, start dropping most
- * samples to avoid wasting CPU time and reduce lock contention.
- */
-
-static const int trickle_thresh = (INPUT_POOL_WORDS * 28) << ENTROPY_SHIFT;
-
-static DEFINE_PER_CPU(int, trickle_count);
 
 /*
  * Originally, we used a primitive polynomial of degree .poolwords
@@ -739,10 +728,6 @@ static void add_timer_randomness(struct timer_rand_state *state, unsigned num)
 	long delta, delta2, delta3;
 
 	preempt_disable();
-	/* if over the trickle threshold, use only 1 in 4096 samples */
-	if (ENTROPY_BITS(&input_pool) > trickle_thresh &&
-	    ((__this_cpu_inc_return(trickle_count) - 1) & 0xfff))
-		goto out;
 
 	sample.jiffies = jiffies;
 	sample.cycles = random_get_entropy();
@@ -784,7 +769,6 @@ static void add_timer_randomness(struct timer_rand_state *state, unsigned num)
 		credit_entropy_bits(&input_pool,
 				    min_t(int, fls(delta>>1), 11));
 	}
-out:
 	preempt_enable();
 }
 
