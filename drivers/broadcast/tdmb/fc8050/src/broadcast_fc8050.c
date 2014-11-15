@@ -23,7 +23,7 @@
 #include <mach/msm_xo.h>
 
 //#include CONFIG_BOARD_HEADER_FILE
-#include "../../../../../arch/arm/mach-msm/lge/gk/board-gk.h"
+#include "../inc/board-gk.h"
 /* external function */
 extern int broadcast_drv_if_isr(void);
 extern void fc8050_isr_control(fci_u8 onoff);
