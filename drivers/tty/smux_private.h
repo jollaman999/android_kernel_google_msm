@@ -37,8 +37,6 @@
 #define SMUX_TX_WM_LOW           2
 #define SMUX_TX_WM_HIGH          4
 
-#include <linux/workqueue.h>
-
 struct tty_struct;
 
 /**
