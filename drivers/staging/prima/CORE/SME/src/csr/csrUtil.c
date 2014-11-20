@@ -2588,25 +2588,18 @@ eCsrCfgDot11Mode csrFindBestPhyMode( tpAniSirGlobal pMac, tANI_U32 phyMode )
     eCsrBand eBand = pMac->roam.configParam.eBand;
 
 
-    if ((0 == phyMode) ||
 #ifdef WLAN_FEATURE_11AC
-        (eCSR_DOT11_MODE_11ac & phyMode) ||
-#endif
-        (eCSR_DOT11_MODE_AUTO & phyMode))
+    if ((0 == phyMode) || ((eCSR_DOT11_MODE_AUTO & phyMode) && (IS_FEATURE_SUPPORTED_BY_FW(DOT11AC))) 
+           || ((eCSR_DOT11_MODE_11ac & phyMode) && (IS_FEATURE_SUPPORTED_BY_FW(DOT11AC))))
     {
-#ifdef WLAN_FEATURE_11AC
-        if (IS_FEATURE_SUPPORTED_BY_FW(DOT11AC))
-        {
-           cfgDot11ModeToUse = eCSR_CFG_DOT11_MODE_11AC;
-        }
-        else
+        cfgDot11ModeToUse = eCSR_CFG_DOT11_MODE_11AC;
+    }
+    else
 #endif
-        {
-           /* Default to 11N mode if user has configured 11ac mode
-            * and FW doesn't supports 11ac mode .
-            */
-           cfgDot11ModeToUse = eCSR_CFG_DOT11_MODE_11N;
-        }
+
+    if ((0 == phyMode) || (eCSR_DOT11_MODE_AUTO & phyMode))
+    {
+        cfgDot11ModeToUse = eCSR_CFG_DOT11_MODE_11N;
     }
     else
     {
