@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2013, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2010-2012, Code Aurora Forum. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -72,7 +72,7 @@ enum wled_ovp_threshold {
 	WLED_OVP_35V,
 	WLED_OVP_32V,
 	WLED_OVP_29V,
-	WLED_OVP_27V,
+	WLED_OVP_37V,
 };
 
 /**
@@ -85,7 +85,6 @@ enum wled_ovp_threshold {
  *  @dig_mod_gen_en - digital module generator
  *  @cs_out_en - current sink output enable
  *  @op_fdbck - selection of output as feedback for the boost
- *  @cabc_en - enable cabc for backlight pwm control
  */
 struct wled_config_data {
 	u8	num_strings;
@@ -93,11 +92,9 @@ struct wled_config_data {
 	u8	boost_curr_lim;
 	u8	cp_select;
 	u8	ctrl_delay_us;
-	u16	comp_res_val;
 	bool	dig_mod_gen_en;
 	bool	cs_out_en;
 	bool	op_fdbck;
-	bool	cabc_en;
 };
 
 /**
@@ -137,5 +134,6 @@ struct pm8xxx_led_platform_data {
 	struct	pm8xxx_led_config	*configs;
 	u32				num_configs;
 	int				use_pwm;
+	void	(*pwm_init)		(void);
 };
 #endif /* __LEDS_PM8XXX_H__ */
