@@ -3795,6 +3795,7 @@ static void touch_early_suspend(struct early_suspend *h)
 	if (prevent_sleep) {
 		enable_irq_wake(ts->client->irq);
 		release_all_ts_event(ts);
+		atomic_set(&ts->keypad_enable, 0);
 	} else
 #endif
 	{
