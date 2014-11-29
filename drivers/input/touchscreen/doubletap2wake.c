@@ -186,7 +186,7 @@ static void detect_doubletap2wake(int x, int y, bool st)
 				pr_info("[jolla-dt2w_debug] touch_nr = %d\n", touch_nr);
 			}
 #endif
-			else {
+			else if (((ktime_to_ms(ktime_get())-tap_time_pre) > DT2W_TIME)) {
 				doubletap2wake_reset();
 				new_touch(x, y);
 #if DT2W_DEBUG
