@@ -3847,9 +3847,10 @@ static void touch_late_resume(struct early_suspend *h)
 #endif
 
 #ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-	if (prevent_sleep)
+	if (prevent_sleep) {
 		disable_irq_wake(ts->client->irq);
-	else
+		atomic_set(&ts->keypad_enable, 1);
+	} else
 #endif
 	{
 		touch_power_cntl(ts, ts->pdata->role->resume_pwr);
