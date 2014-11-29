@@ -361,7 +361,7 @@ static ssize_t dt2w_doubletap2wake_show(struct device *dev,
 static ssize_t dt2w_doubletap2wake_dump(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
-	if (buf[0] >= '0' && buf[0] <= '2' && buf[1] == '\n')
+	if ((buf[0] == '0' || buf[0] == '1') && buf[1] == '\n')
                 if (dt2w_switch != buf[0] - '0')
 		        dt2w_switch = buf[0] - '0';
 
