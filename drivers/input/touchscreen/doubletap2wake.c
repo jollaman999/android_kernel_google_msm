@@ -62,7 +62,7 @@ MODULE_LICENSE("GPLv2");
 
 #define DT2W_PWRKEY_DUR		0
 #define DT2W_FEATHER		200
-#define DT2W_TIME		400
+#define DT2W_TIME		200
 
 /* Resources */
 int dt2w_switch = DT2W_DEFAULT;
