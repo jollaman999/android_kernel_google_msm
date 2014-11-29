@@ -57,7 +57,7 @@ MODULE_VERSION(DRIVER_VERSION);
 MODULE_LICENSE("GPLv2");
 
 /* Tuneables */
-#define DT2W_DEBUG		0
+#define DT2W_DEBUG		1
 #define DT2W_DEFAULT		1
 
 #define DT2W_PWRKEY_DUR		0
@@ -154,13 +154,45 @@ static void detect_doubletap2wake(int x, int y, bool st)
 		if (touch_nr == 0) {
 			new_touch(x, y);
 		} else if (touch_nr == 1) {
+#if DT2W_DEBUG
+			pr_info("[jolla-dt2w_debug] ktime_to_ms = %llu\n",
+				(ktime_to_ms(ktime_get())-tap_time_pre));
+			pr_info("[jolla-dt2w_debug] DT2W_TIME = %d\n", DT2W_TIME);
+			if ((ktime_to_ms(ktime_get())-tap_time_pre) > DT2W_TIME)
+				pr_info("[jolla-dt2w_debug] ktime_to_ms is bigger\n");
+			else if ((ktime_to_ms(ktime_get())-tap_time_pre) < DT2W_TIME)
+				pr_info("[jolla-dt2w_debug] DT2W_TIME is bigger\n");
+
+			pr_info("[jolla-dt2w_debug] calc_feather x=%d, y=%d\n", \
+				calc_feather(x, x_pre), calc_feather(y, y_pre));
+			pr_info("[jolla-dt2w_debug] DT2W_FEATHER = %d\n", DT2W_FEATHER);
+			if ((calc_feather(x, x_pre) > DT2W_FEATHER) &&
+			    (calc_feather(y, y_pre) > DT2W_FEATHER))
+				pr_info("[jolla-dt2w_debug] calc_feather is bigger\n");
+			else if ((calc_feather(x, x_pre) < DT2W_FEATHER) &&
+			   	 (calc_feather(y, y_pre) < DT2W_FEATHER))
+				pr_info("[jolla-dt2w_debug] DT2W_FEATHER is bigger\n");
+
+#endif
 			if ((calc_feather(x, x_pre) < DT2W_FEATHER) &&
 			    (calc_feather(y, y_pre) < DT2W_FEATHER) &&
 			    ((ktime_to_ms(ktime_get())-tap_time_pre) < DT2W_TIME))
+#if DT2W_DEBUG
+			{
+#endif
 				touch_nr++;
+#if DT2W_DEBUG
+				pr_info("[jolla-dt2w_debug] touch_nr++\n");
+				pr_info("[jolla-dt2w_debug] touch_nr = %d\n", touch_nr);
+			}
+#endif
 			else {
 				doubletap2wake_reset();
 				new_touch(x, y);
+#if DT2W_DEBUG
+				pr_info("[jolla-dt2w_debug] dt2w reseted!!\n");
+				pr_info("[jolla-dt2w_debug] touch_nr = %d\n", touch_nr);
+#endif
 			}
 		} else {
 			doubletap2wake_reset();
