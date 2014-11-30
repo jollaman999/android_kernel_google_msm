@@ -66,6 +66,13 @@ static struct wake_lock suspend_backoff_lock;
 
 static unsigned suspend_short_count;
 
+// To prevent doubletap2wake 3 taps issue when suspended. - by jollaman999
+// Use with drivers/input/touchscreen/doubletap2wake.c
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+bool dt2w_suspendexit;
+EXPORT_SYMBOL(dt2w_suspendexit);
+#endif
+
 #ifdef CONFIG_WAKELOCK_STAT
 static struct wake_lock deleted_wake_locks;
 static ktime_t last_sleep_time_update;
@@ -370,6 +377,11 @@ static void suspend(struct work_struct *work)
 			"(%d-%02d-%02d %02d:%02d:%02d.%09lu UTC)\n", ret,
 			tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
 			tm.tm_hour, tm.tm_min, tm.tm_sec, ts_exit.tv_nsec);
+// To prevent doubletap2wake 3 taps issue when suspended. - by jollaman999
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+			pr_info("dt2w_suspendexit : doubletap2wake 3 taps solution called\n");
+			dt2w_suspendexit = true;
+#endif
 	}
 
 	if (ts_exit.tv_sec - ts_entry.tv_sec <= 1) {
