@@ -68,11 +68,6 @@ MODULE_LICENSE("GPLv2");
 int dt2w_switch = DT2W_DEFAULT;
 static cputime64_t tap_time_pre = 0;
 static int touch_x = 0, touch_y = 0, touch_nr = 0, x_pre = 0, y_pre = 0;
-
-// To prevent doubletap2wake 3 taps issue when suspended. - by jollaman999
-// Use with kernel/power/wakelock.c
-extern bool dt2w_suspendexit;
-
 static bool touch_x_called = false, touch_y_called = false, touch_cnt = true;
 static bool scr_suspended = false, exec_count = true;
 #ifndef CONFIG_HAS_EARLYSUSPEND
@@ -181,35 +176,23 @@ static void detect_doubletap2wake(int x, int y, bool st)
 #endif
 			if ((calc_feather(x, x_pre) < DT2W_FEATHER) &&
 			    (calc_feather(y, y_pre) < DT2W_FEATHER) &&
-			    ((ktime_to_ms(ktime_get())-tap_time_pre) < DT2W_TIME)) {
+			    ((ktime_to_ms(ktime_get())-tap_time_pre) < DT2W_TIME))
+#if DT2W_DEBUG
+			{
+#endif
 				touch_nr++;
 #if DT2W_DEBUG
 				pr_info("[jolla-dt2w_debug] touch_nr++\n");
 				pr_info("[jolla-dt2w_debug] touch_nr = %d\n", touch_nr);
+			}
 #endif
-				// To prevent doubletap2wake 3 taps issue when suspended. - by jollaman999
-				if (dt2w_suspendexit) {
-					touch_nr++;
-#if DT2W_DEBUG
-					pr_info("[jolla-dt2w_debug] touch_nr++ by dt2w_suspendexit\n");
-					pr_info("[jolla-dt2w_debug] touch_nr = %d\n", touch_nr);
-#endif
-				}
-			} else {
+			else {
 				doubletap2wake_reset();
 				new_touch(x, y);
 #if DT2W_DEBUG
-				pr_info("[jolla-dt2w_debug] touch_nr++\n");
+				pr_info("[jolla-dt2w_debug] dt2w reseted!!\n");
 				pr_info("[jolla-dt2w_debug] touch_nr = %d\n", touch_nr);
 #endif
-				// To prevent doubletap2wake 3 taps issue when suspended. - by jollaman999
-				if (dt2w_suspendexit) {
-					touch_nr++;
-#if DT2W_DEBUG
-					pr_info("[jolla-dt2w_debug] touch_nr++ by dt2w_suspendexit\n");
-					pr_info("[jolla-dt2w_debug] touch_nr = %d\n", touch_nr);
-#endif
-				}
 			}
 		} else {
 			doubletap2wake_reset();
@@ -221,8 +204,6 @@ static void detect_doubletap2wake(int x, int y, bool st)
 			doubletap2wake_pwrtrigger();
 			doubletap2wake_reset();
 		}
-		// To prevent doubletap2wake 3 taps issue when suspended. - by jollaman999
-		dt2w_suspendexit = false;
 	}
 }
 
