@@ -164,7 +164,8 @@ static void detect_doubletap2wake(int x, int y, bool st)
 #endif
 	if ((single_touch) && (dt2w_switch > 0) && (exec_count) && (touch_cnt)) {
 		touch_cnt = false;
-		if (touch_nr == 0) {
+		// Make enable to set touch counts (Max : 10) - by jollaman999
+		if (touch_nr == dt2w_switch - 1) {
 			new_touch(x, y);
 			// To prevent doubletap2wake 3 taps issue when suspended. - by jollaman999
 			if(dt2w_suspend_enter) {
@@ -172,17 +173,20 @@ static void detect_doubletap2wake(int x, int y, bool st)
 				pr_info("[jolla-dt2w_debug] doubletap2wake 3 taps solution time check = %lld\n",
 					(ktime_to_ms(ktime_get())-dt2w_suspend_exit_time));
 #endif
-				if((ktime_to_ms(ktime_get())-dt2w_suspend_exit_time) < DT2W_TIME) {
+				// Make enable to set touch counts (Max : 10) - by jollaman999
+				if((ktime_to_ms(ktime_get())-dt2w_suspend_exit_time) < (DT2W_TIME/2*(dt2w_switch+1))) {
 					touch_nr++;
 #if DT2W_DEBUG
 					pr_info("[jolla-dt2w_debug] touch_nr++ by doubletap2wake 3 taps solution\n");
 #endif
 				}
 			}
-		} else if (touch_nr == 1) {
+		// Make enable to set touch counts (Max : 10) - by jollaman999
+		} else if (touch_nr >= 1 && touch_nr <= dt2w_switch) {
 			if ((calc_feather(x, x_pre) < DT2W_FEATHER) &&
 			    (calc_feather(y, y_pre) < DT2W_FEATHER) &&
-			    ((ktime_to_ms(ktime_get())-tap_time_pre) < DT2W_TIME)) {
+			    // Make enable to set touch counts (Max : 10) - by jollaman999
+			    ((ktime_to_ms(ktime_get())-tap_time_pre) < (DT2W_TIME/2*(dt2w_switch+1)))) {
 				touch_nr++;
 #if DT2W_DEBUG
 				pr_info("[jolla-dt2w_debug] touch_nr++\n");
@@ -200,7 +204,8 @@ static void detect_doubletap2wake(int x, int y, bool st)
 			doubletap2wake_reset();
 			new_touch(x, y);
 		}
-		if ((touch_nr > 1)) {
+		// Make enable to set touch counts (Max : 10) - by jollaman999
+		if ((touch_nr > dt2w_switch)) {
 			pr_info(LOGTAG"ON\n");
 			exec_count = false;
 			doubletap2wake_pwrtrigger();
@@ -367,7 +372,9 @@ static ssize_t dt2w_doubletap2wake_show(struct device *dev,
 static ssize_t dt2w_doubletap2wake_dump(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
-	if ((buf[0] == '0' || buf[0] == '1') && buf[1] == '\n')
+	// Make enable to set touch counts (Max : 10) - by jollaman999
+	// You should tap 1 more from set number to wake your device.
+	if (buf[0] >= '0' && buf[0] <= '9' && buf[1] == '\n')
                 if (dt2w_switch != buf[0] - '0')
 		        dt2w_switch = buf[0] - '0';
 
