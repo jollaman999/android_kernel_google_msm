@@ -199,7 +199,7 @@ static void detect_doubletap2wake(int x, int y, bool st)
 				doubletap2wake_reset();
 				new_touch(x, y);
 #if DT2W_DEBUG
-				pr_info("[jolla-dt2w_debug] dt2w reseted!!\n");
+				pr_info("[jolla-dt2w_debug] touch_nr++\n");
 				pr_info("[jolla-dt2w_debug] touch_nr = %d\n", touch_nr);
 #endif
 				// To prevent doubletap2wake 3 taps issue when suspended. - by jollaman999
