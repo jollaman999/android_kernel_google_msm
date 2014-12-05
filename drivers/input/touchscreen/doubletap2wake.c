@@ -158,14 +158,6 @@ static void detect_doubletap2wake(int x, int y, bool st)
 		touch_cnt = false;
 		if (touch_nr == 0) {
 			new_touch(x, y);
-			// To prevent doubletap2wake 3 taps issue when suspended. - by jollaman999
-			if (dt2w_suspendexit) {
-				touch_nr++;
-#if DT2W_DEBUG
-				pr_info("[jolla-dt2w_debug] touch_nr++ by dt2w_suspendexit\n");
-				pr_info("[jolla-dt2w_debug] touch_nr = %d\n", touch_nr);
-#endif
-			}
 		} else if (touch_nr == 1) {
 #if DT2W_DEBUG
 			pr_info("[jolla-dt2w_debug] ktime_to_ms = %llu\n",
@@ -195,6 +187,14 @@ static void detect_doubletap2wake(int x, int y, bool st)
 				pr_info("[jolla-dt2w_debug] touch_nr++\n");
 				pr_info("[jolla-dt2w_debug] touch_nr = %d\n", touch_nr);
 #endif
+				// To prevent doubletap2wake 3 taps issue when suspended. - by jollaman999
+				if (dt2w_suspendexit) {
+					touch_nr++;
+#if DT2W_DEBUG
+					pr_info("[jolla-dt2w_debug] touch_nr++ by dt2w_suspendexit\n");
+					pr_info("[jolla-dt2w_debug] touch_nr = %d\n", touch_nr);
+#endif
+				}
 			} else {
 				doubletap2wake_reset();
 				new_touch(x, y);
@@ -202,6 +202,14 @@ static void detect_doubletap2wake(int x, int y, bool st)
 				pr_info("[jolla-dt2w_debug] dt2w reseted!!\n");
 				pr_info("[jolla-dt2w_debug] touch_nr = %d\n", touch_nr);
 #endif
+				// To prevent doubletap2wake 3 taps issue when suspended. - by jollaman999
+				if (dt2w_suspendexit) {
+					touch_nr++;
+#if DT2W_DEBUG
+					pr_info("[jolla-dt2w_debug] touch_nr++ by dt2w_suspendexit\n");
+					pr_info("[jolla-dt2w_debug] touch_nr = %d\n", touch_nr);
+#endif
+				}
 			}
 		} else {
 			doubletap2wake_reset();
