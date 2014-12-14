@@ -32,10 +32,6 @@
 #include "msm-pcm-q6.h"
 #include "msm-pcm-routing.h"
 
-#ifdef CONFIG_TOUCHSCREEN_TAP2UNLOCK
-extern bool t2u_allow;
-#endif
-
 static struct audio_locks the_locks;
 #define ENABLE_QOS
 #ifdef ENABLE_QOS
@@ -422,11 +418,6 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct msm_audio *prtd = runtime->private_data;
-
-#if defined(CONFIG_TOUCHSCREEN_TAP2UNLOCK)
-	t2u_allow = true;
-#endif
-
 #ifdef ENABLE_QOS
 	if (first_time) {
 		int usecs = LOW_LATENCY_QOS_SETTING_USECS;
@@ -491,11 +482,6 @@ static int msm_pcm_playback_close(struct snd_pcm_substream *substream)
 	int ret = 0;
 
 	pr_debug("%s\n", __func__);
-
-#if defined(CONFIG_TOUCHSCREEN_TAP2UNLOCK)
-	t2u_allow = false;
-#endif
-
 #ifdef ENABLE_QOS
 	{
 		int usecs = PM_QOS_DEFAULT_VALUE;
