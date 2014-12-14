@@ -73,6 +73,13 @@ static unsigned suspend_short_count;
 extern bool dt2w_suspend_enter;
 extern cputime64_t dt2w_suspend_exit_time;
 #endif
+#ifdef CONFIG_TOUCHSCREEN_TAP2UNLOCK
+#ifndef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+#include <linux/hrtimer.h>
+#include <asm-generic/cputime.h>
+#endif
+extern bool t2u_suspend_enter;
+#endif
 
 #ifdef CONFIG_WAKELOCK_STAT
 static struct wake_lock deleted_wake_locks;
@@ -370,6 +377,9 @@ static void suspend(struct work_struct *work)
 	// To prevent doubletap2wake 3 taps issue when suspended. - by jollaman999
 #ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
 	dt2w_suspend_enter = true;
+#endif
+#ifdef CONFIG_TOUCHSCREEN_TAP2UNLOCK
+	t2u_suspend_enter = true;
 #endif
 	getnstimeofday(&ts_entry);
 	ret = pm_suspend(requested_suspend_state);
