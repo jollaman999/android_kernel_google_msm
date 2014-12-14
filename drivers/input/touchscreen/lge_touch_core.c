@@ -3774,11 +3774,6 @@ static void touch_early_suspend(struct early_suspend *h)
 #endif
 #if defined(CONFIG_TOUCHSCREEN_TAP2UNLOCK)
 	prevent_sleep = prevent_sleep || (t2u_switch > 0);
-
-	if (t2u_switch > 0 && t2u_allow == false && t2u_scr_suspended == false) {
-		pr_info("t2u : going to t2u_force_suspend");
-		prevent_sleep = false;
-	}
 #endif
 #endif
 
@@ -3831,8 +3826,12 @@ static void touch_late_resume(struct early_suspend *h)
 	struct lge_touch_data *ts =
 			container_of(h, struct lge_touch_data, early_suspend);
 #ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-#if defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE) || defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE)
+#if defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE) || defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) || defined(CONFIG_TOUCHSCREEN_TAP2UNLOCK)
 	bool prevent_sleep = false;
+#endif
+#if defined(CONFIG_TOUCHSCREEN_TAP2UNLOCK)
+	// Prevent touch sensor not working when first load.
+	int first_load = 1;
 #endif
 #if defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE)
 	prevent_sleep = (s2w_switch == 1);
@@ -3848,6 +3847,12 @@ static void touch_late_resume(struct early_suspend *h)
 		prevent_sleep = false;
 
 		return;
+	}
+
+	// Prevent touch sensor not working when first load.
+	if (first_load) {
+		prevent_sleep = true;
+		first_load = 0;
 	}
 #endif
 #endif
