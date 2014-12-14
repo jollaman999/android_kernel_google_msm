@@ -43,6 +43,9 @@
 #ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
 #include <linux/input/doubletap2wake.h>
 #endif
+#ifdef CONFIG_TOUCHSCREEN_TAP2UNLOCK
+#include <linux/input/tap2unlock.h>
+#endif
 #endif
 
 #ifdef CUST_G_TOUCH
@@ -3769,6 +3772,14 @@ static void touch_early_suspend(struct early_suspend *h)
 #if defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE)
 	prevent_sleep = prevent_sleep || (dt2w_switch > 0);
 #endif
+#if defined(CONFIG_TOUCHSCREEN_TAP2UNLOCK)
+	prevent_sleep = prevent_sleep || (t2u_switch > 0);
+
+	if (t2u_switch > 0 && t2u_allow == false && t2u_scr_suspended == false) {
+		pr_info("t2u : going to t2u_force_suspend");
+		prevent_sleep = false;
+	}
+#endif
 #endif
 
 	if (unlikely(touch_debug_mask & DEBUG_TRACE))
@@ -3828,6 +3839,16 @@ static void touch_late_resume(struct early_suspend *h)
 #endif
 #if defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE)
 	prevent_sleep = prevent_sleep || (dt2w_switch > 0);
+#endif
+#if defined(CONFIG_TOUCHSCREEN_TAP2UNLOCK)
+	prevent_sleep = prevent_sleep || (t2u_switch > 0);
+
+	if (t2u_switch > 0 && t2u_allow == false && t2u_scr_suspended == false) {
+		pr_info("t2u : touch sensor awake blocked by t2u protect");
+		prevent_sleep = false;
+
+		return;
+	}
 #endif
 #endif
 
