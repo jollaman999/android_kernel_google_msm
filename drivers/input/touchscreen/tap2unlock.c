@@ -29,13 +29,11 @@
 #include <linux/slab.h>
 #include <linux/workqueue.h>
 #include <linux/input.h>
-/*
 #ifndef CONFIG_HAS_EARLYSUSPEND
 #include <linux/lcd_notify.h>
 #else
 #include <linux/earlysuspend.h>
 #endif
-*/
 #include <linux/hrtimer.h>
 #include <asm-generic/cputime.h>
 
@@ -59,10 +57,10 @@ MODULE_VERSION(DRIVER_VERSION);
 MODULE_LICENSE("GPLv2");
 
 /* Tuneables */
-#define t2u_DEBUG		0
+#define t2u_DEBUG		1
 #define t2u_DEFAULT		1
 
-#define t2u_PWRKEY_DUR		0
+#define t2u_PWRKEY_DUR		20
 #define t2u_FEATHER		200
 #define t2u_TIME		600 //gap(in ms) allowed between 'each' touch (for 4 letter pattern - 4x600 =2400 ms)
 #define VERTICAL_SCREEN_MIDWAY  1279 // Your device's vertical resolution / 2
@@ -72,9 +70,6 @@ MODULE_LICENSE("GPLv2");
 int t2u_switch = t2u_DEFAULT;
 int t2u_pattern[4] = {1,2,3,4};
 bool t2u_scr_suspended = false;
-bool t2u_suspend_enter;
-EXPORT_SYMBOL(t2u_scr_suspended);
-EXPORT_SYMBOL(t2u_suspend_enter);
 static cputime64_t tap_time_pre = 0;
 static int touch_x = 0, touch_y = 0, touch_nr = 0;
 static bool touch_x_called = false, touch_y_called = false, touch_cnt = false;
@@ -155,28 +150,18 @@ static void detect_tap2unlock(int x, int y)
 		touch_cnt = false;
 		//check if time gap between two touches is less than t2u_TIME 
 		if(touch_nr > 0 && (ktime_to_ms(ktime_get()) - tap_time_pre) > t2u_TIME)
-			touch_nr = 0;
+			touch_nr = 0;		
 
-		if (touch_nr == 0) {
-			touch_nr++;
-			if (t2u_suspend_enter) {
-				touch_nr = 2;
-				t2u_suspend_enter = false;
-				goto t2u_suspend_jump;
-			}
-			return;
-		}
-
-		if (touch_nr < 5) {
-			touch_nr++;
-t2u_suspend_jump:
-			if (calc_feather(x, y) == t2u_pattern[touch_nr-2]) {
+		if (touch_nr < 3) {
+			
+			if (calc_feather(x, y) == t2u_pattern[touch_nr]) {
 				tap_time_pre = ktime_to_ms(ktime_get());
+				touch_nr++;
 			}
 			else
 				touch_nr = 0;
 		
-		} else  {//when touch_nr ==5 i.e on the 1+4 th knock , it wont be allowed any further than that
+		} else  {//when touch_nr ==3 i.e on the 4 th knock , it wont be allowed any further than that
 			 
 			 if (calc_feather(x, y) == t2u_pattern[3]) {
 				t2u_allow = true;
@@ -187,6 +172,7 @@ t2u_suspend_jump:
 			else 
 				touch_nr = 0;
 		}
+		
 	}
 }
 
@@ -296,7 +282,6 @@ static struct input_handler t2u_input_handler = {
 	.id_table	= t2u_ids,
 };
 
-/*
 #ifndef CONFIG_HAS_EARLYSUSPEND
 static int lcd_notifier_callback(struct notifier_block *this,
 				unsigned long event, void *data)
@@ -329,7 +314,6 @@ static struct early_suspend t2u_early_suspend_handler = {
 	.resume = t2u_late_resume,
 };
 #endif
-*/
 
 /*
  * SYSFS stuff below here
@@ -347,7 +331,7 @@ static ssize_t t2u_tap2unlock_show(struct device *dev,
 static ssize_t t2u_tap2unlock_dump(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
-	if ((buf[0] == '0' || buf[0] == '1') && buf[1] == '\n')
+	if (buf[0] >= '0' && buf[0] <= '2' && buf[1] == '\n')
                 if (t2u_switch != buf[0] - '0')
 		        t2u_switch = buf[0] - '0';
 
@@ -370,10 +354,10 @@ static ssize_t t2u_pattern_show(struct device *dev,
 static ssize_t t2u_pattern_dump(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
-	if ((buf[0] >= '1' && buf[0] <= '4') &&
-		(buf[1] >= '1' && buf[1] <= '4') &&
-		(buf[2] >= '1' && buf[2] <= '4') &&
-		(buf[3] >= '1' && buf[3] <= '4')) {
+	if ((buf[0] >= '0' && buf[0] <= '4') &&
+		(buf[1] >= '0' && buf[1] <= '4') &&
+		(buf[2] >= '0' && buf[2] <= '4') &&
+		(buf[3] >= '0' && buf[3] <= '4')) {
                 
 		  t2u_pattern[0] = buf[0] - '0';
 		  t2u_pattern[1] = buf[1] - '0';
@@ -445,7 +429,6 @@ static int __init tap2unlock_init(void)
 	if (rc)
 		pr_err("%s: Failed to register t2u_input_handler\n", __func__);
 
-/*
 #ifndef CONFIG_HAS_EARLYSUSPEND
 	t2u_lcd_notif.notifier_call = lcd_notifier_callback;
 	if (lcd_register_client(&t2u_lcd_notif) != 0) {
@@ -454,7 +437,6 @@ static int __init tap2unlock_init(void)
 #else
 	register_early_suspend(&t2u_early_suspend_handler);
 #endif
-*/
 
 #ifndef ANDROID_TOUCH_DECLARED
 	android_touch_kobj = kobject_create_and_add("tap2unlock", NULL) ;
