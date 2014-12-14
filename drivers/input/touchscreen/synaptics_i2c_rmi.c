@@ -25,12 +25,6 @@
 #include <linux/slab.h>
 #include <linux/synaptics_i2c_rmi.h>
 
-#ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-#ifdef CONFIG_TOUCHSCREEN_TAP2UNLOCK
-#include <linux/input/tap2unlock.h>
-#endif
-#endif
-
 static struct workqueue_struct *synaptics_wq;
 
 struct synaptics_ts_data {
@@ -630,19 +624,7 @@ static void synaptics_ts_early_suspend(struct early_suspend *h)
 {
 	struct synaptics_ts_data *ts;
 	ts = container_of(h, struct synaptics_ts_data, early_suspend);
-#ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-	bool prevent_sleep = false;
-#if defined(CONFIG_TOUCHSCREEN_TAP2UNLOCK)
-	prevent_sleep = prevent_sleep || (t2u_switch > 0);
-
-	if (prevent_sleep) {
-		synaptics_ts_resume(ts->client);
-	} else
-#endif
-#endif
-	{
-		synaptics_ts_suspend(ts->client, PMSG_SUSPEND);
-	}
+	synaptics_ts_suspend(ts->client, PMSG_SUSPEND);
 }
 
 static void synaptics_ts_late_resume(struct early_suspend *h)
