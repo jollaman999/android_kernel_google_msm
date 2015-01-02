@@ -33,7 +33,9 @@
 #include <trace/events/power.h>
 
 // Dynamic thermal control - By jollaman999
+/* Working with drivers/thermal/msm_thermal.c */
 extern bool cpufreq_max_changed;
+extern bool msm_thermal_throttle_called;
 
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
@@ -453,6 +455,7 @@ static ssize_t store_##file_name					\
 
 store_one(scaling_min_freq, min);
 // Dynamic thermal control - By jollaman999
+/* Working with drivers/thermal/msm_thermal.c */
 /* store_one(scaling_max_freq, max); */
 static ssize_t store_scaling_max_freq
 (struct cpufreq_policy *policy, const char *buf, size_t count)
@@ -471,7 +474,8 @@ static ssize_t store_scaling_max_freq
 	ret = __cpufreq_set_policy(policy, &new_policy);
 	policy->user_policy.max = policy->max;
 
-	cpufreq_max_changed = true;
+	if(!msm_thermal_throttle_called)
+		cpufreq_max_changed = true;
 
 	return ret ? ret : count;
 }
