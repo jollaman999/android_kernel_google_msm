@@ -480,16 +480,11 @@
 #define TABLA_A_RX_LINE_CNP_DBG			(0x01EC)
 #define TABLA_A_RX_LINE_CNP_DBG__POR			(0x00000000)
 #define TABLA_A_MBHC_HPH			(0x01ED)
-/* LGE_CHANGE START 2012.06.07, sunkuk.kim@lge.com 
-* change for headphone detect issue in 3.3V low batt. 
+/* LGE_CHANGE START 2012.06.07, sunkuk.kim@lge.com
+* change for headphone detect issue in 3.3V low batt.
 */
-#ifdef CONFIG_LGE_AUDIO
 #define TABLA_A_MBHC_HPH__POR			(0x00000068)
-#else
-#define TABLA_A_MBHC_HPH__POR			(0x00000048)
-#endif
 /* LGE_CHANGE END 2012.06.07, sunkuk.kim@lge.com */
-
 #define TABLA_A_CONFIG_MODE_FREQ			(0x01F7)
 #define TABLA_A_CONFIG_MODE_FREQ__POR			(0x00000047)
 #define TABLA_A_CONFIG_MODE_TEST			(0x01F8)
