@@ -127,8 +127,6 @@ extern void proc_tty_init(void);
 extern void proc_tty_register_driver(struct tty_driver *driver);
 extern void proc_tty_unregister_driver(struct tty_driver *driver);
 
-extern void *PDE_DATA(const struct inode *);
-
 /*
  * proc_devtree.c
  */
@@ -230,8 +228,6 @@ static inline struct file *proc_ns_fget(int fd)
 {
 	return ERR_PTR(-EINVAL);
 }
-
-static inline void *PDE_DATA(const struct inode *inode) {BUG(); return NULL;}
 
 #endif /* CONFIG_PROC_FS */
 

@@ -12,8 +12,6 @@
 #include <linux/slab.h>
 #include <linux/rcupdate.h>
 
-#include <linux/uidgid.h>
-
 #define ACL_UNDEFINED_ID	(-1)
 
 /* a_type field in acl_user_posix_entry_t */
@@ -39,10 +37,6 @@ struct posix_acl_entry {
 	short			e_tag;
 	unsigned short		e_perm;
 	unsigned int		e_id;
-	union {
-		kuid_t		e_uid;
-		kgid_t		e_gid;
-	};
 };
 
 struct posix_acl {
@@ -95,11 +89,6 @@ extern struct posix_acl *get_posix_acl(struct inode *, int);
 extern int set_posix_acl(struct inode *, int, struct posix_acl *);
 
 #ifdef CONFIG_FS_POSIX_ACL
-// jollaman999
-extern int posix_acl_chmod_f2fs(struct inode *, umode_t);
-extern int posix_acl_create_f2fs(struct inode *, umode_t *, struct posix_acl **,
-		struct posix_acl **);
-
 static inline struct posix_acl **acl_by_type(struct inode *inode, int type)
 {
 	switch (type) {
@@ -170,22 +159,7 @@ static inline void forget_all_cached_acls(struct inode *inode)
 	if (old_default != ACL_NOT_CACHED)
 		posix_acl_release(old_default);
 }
-// jollaman999
-#else
-static inline int posix_acl_chmod_f2fs(struct inode *inode, umode_t mode)
-{
-	return 0;
-}
-
-static inline int posix_acl_create_f2fs(struct inode *inode, umode_t *mode,
-		struct posix_acl **default_acl, struct posix_acl **acl)
-{
-	*default_acl = *acl = NULL;
-	return 0;
-}
-
-
-#endif /* CONFIG_FS_POSIX_ACL */
+#endif
 
 static inline void cache_no_acl(struct inode *inode)
 {
