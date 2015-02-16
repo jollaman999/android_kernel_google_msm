@@ -942,7 +942,7 @@ static void f2fs_write_failed(struct address_space *mapping, loff_t to)
 
  	if (to > inode->i_size) {
 		__truncate_pagecache(inode, inode->i_size);
- 		truncate_blocks(inode, inode->i_size, true);
+ 		truncate_blocks(inode, inode->i_size);
  	}
  }
 
