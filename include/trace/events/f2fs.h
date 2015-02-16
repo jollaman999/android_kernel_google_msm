@@ -589,65 +589,65 @@ TRACE_EVENT(f2fs_fallocate,
 
 TRACE_EVENT(f2fs_direct_IO_enter,
 
-	TP_PROTO(struct inode *inode, loff_t offset, unsigned long len, int rw),
+       TP_PROTO(struct inode *inode, loff_t offset, unsigned long len, int rw),
 
-	TP_ARGS(inode, offset, len, rw),
+       TP_ARGS(inode, offset, len, rw),
 
-	TP_STRUCT__entry(
-		__field(dev_t,	dev)
-		__field(ino_t,	ino)
-		__field(loff_t,	pos)
-		__field(unsigned long,	len)
-		__field(int,	rw)
-	),
+       TP_STRUCT__entry(
+               __field(dev_t,  dev)
+               __field(ino_t,  ino)
+               __field(loff_t, pos)
+               __field(unsigned long,  len)
+               __field(int,    rw)
+       ),
 
-	TP_fast_assign(
-		__entry->dev	= inode->i_sb->s_dev;
-		__entry->ino	= inode->i_ino;
-		__entry->pos	= offset;
-		__entry->len	= len;
-		__entry->rw	= rw;
-	),
+       TP_fast_assign(
+               __entry->dev    = inode->i_sb->s_dev;
+               __entry->ino    = inode->i_ino;
+               __entry->pos    = offset;
+               __entry->len    = len;
+               __entry->rw     = rw;
+       ),
 
-	TP_printk("dev = (%d,%d), ino = %lu pos = %lld len = %lu rw = %d",
-		show_dev_ino(__entry),
-		__entry->pos,
-		__entry->len,
-		__entry->rw)
+       TP_printk("dev = (%d,%d), ino = %lu pos = %lld len = %lu rw = %d",
+               show_dev_ino(__entry),
+               __entry->pos,
+               __entry->len,
+               __entry->rw)
 );
 
 TRACE_EVENT(f2fs_direct_IO_exit,
 
-	TP_PROTO(struct inode *inode, loff_t offset, unsigned long len,
-		 int rw, int ret),
+       TP_PROTO(struct inode *inode, loff_t offset, unsigned long len,
+                int rw, int ret),
 
-	TP_ARGS(inode, offset, len, rw, ret),
+       TP_ARGS(inode, offset, len, rw, ret),
 
-	TP_STRUCT__entry(
-		__field(dev_t,	dev)
-		__field(ino_t,	ino)
-		__field(loff_t,	pos)
-		__field(unsigned long,	len)
-		__field(int,	rw)
-		__field(int,	ret)
-	),
+       TP_STRUCT__entry(
+               __field(dev_t,  dev)
+               __field(ino_t,  ino)
+               __field(loff_t, pos)
+               __field(unsigned long,  len)
+               __field(int,    rw)
+               __field(int,    ret)
+       ),
 
-	TP_fast_assign(
-		__entry->dev	= inode->i_sb->s_dev;
-		__entry->ino	= inode->i_ino;
-		__entry->pos	= offset;
-		__entry->len	= len;
-		__entry->rw	= rw;
-		__entry->ret	= ret;
-	),
+       TP_fast_assign(
+               __entry->dev    = inode->i_sb->s_dev;
+               __entry->ino    = inode->i_ino;
+               __entry->pos    = offset;
+               __entry->len    = len;
+               __entry->rw     = rw;
+               __entry->ret    = ret;
+       ),
 
-	TP_printk("dev = (%d,%d), ino = %lu pos = %lld len = %lu "
-		"rw = %d ret = %d",
-		show_dev_ino(__entry),
-		__entry->pos,
-		__entry->len,
-		__entry->rw,
-		__entry->ret)
+       TP_printk("dev = (%d,%d), ino = %lu pos = %lld len = %lu "
+               "rw = %d ret = %d",
+               show_dev_ino(__entry),
+               __entry->pos,
+               __entry->len,
+               __entry->rw,
+               __entry->ret)
 );
 
 TRACE_EVENT(f2fs_reserve_new_block,
@@ -692,8 +692,8 @@ DECLARE_EVENT_CLASS(f2fs__submit_bio,
 		__entry->dev		= sb->s_dev;
 		__entry->rw		= rw;
 		__entry->type		= type;
-		__entry->sector		= bio->bi_sector;
-		__entry->size		= bio->bi_size;
+		__entry->sector		= bio->bi_iter.bi_sector;
+		__entry->size		= bio->bi_iter.bi_size;
 	),
 
 	TP_printk("dev = (%d,%d), %s%s, %s, sector = %lld, size = %u",
@@ -795,7 +795,6 @@ DECLARE_EVENT_CLASS(f2fs__page,
 		__field(int, dir)
 		__field(pgoff_t, index)
 		__field(int, dirty)
-		__field(int, uptodate)
 	),
 
 	TP_fast_assign(
@@ -805,31 +804,14 @@ DECLARE_EVENT_CLASS(f2fs__page,
 		__entry->dir	= S_ISDIR(page->mapping->host->i_mode);
 		__entry->index	= page->index;
 		__entry->dirty	= PageDirty(page);
-		__entry->uptodate = PageUptodate(page);
 	),
 
-	TP_printk("dev = (%d,%d), ino = %lu, %s, %s, index = %lu, "
-		"dirty = %d, uptodate = %d",
+	TP_printk("dev = (%d,%d), ino = %lu, %s, %s, index = %lu, dirty = %d",
 		show_dev_ino(__entry),
 		show_block_type(__entry->type),
 		show_file_type(__entry->dir),
 		(unsigned long)__entry->index,
-		__entry->dirty,
-		__entry->uptodate)
-);
-
-DEFINE_EVENT(f2fs__page, f2fs_writepage,
-
-	TP_PROTO(struct page *page, int type),
-
-	TP_ARGS(page, type)
-);
-
-DEFINE_EVENT(f2fs__page, f2fs_readpage,
-
-	TP_PROTO(struct page *page, int type),
-
-	TP_ARGS(page, type)
+		__entry->dirty)
 );
 
 DEFINE_EVENT(f2fs__page, f2fs_set_page_dirty,
@@ -840,6 +822,20 @@ DEFINE_EVENT(f2fs__page, f2fs_set_page_dirty,
 );
 
 DEFINE_EVENT(f2fs__page, f2fs_vm_page_mkwrite,
+
+	TP_PROTO(struct page *page, int type),
+
+	TP_ARGS(page, type)
+);
+
+DEFINE_EVENT(f2fs__page, f2fs_writepage,
+
+	TP_PROTO(struct page *page, int type),
+
+	TP_ARGS(page, type)
+);
+
+DEFINE_EVENT(f2fs__page, f2fs_readpage,
 
 	TP_PROTO(struct page *page, int type),
 
@@ -992,29 +988,29 @@ TRACE_EVENT(f2fs_issue_discard,
 
 TRACE_EVENT(f2fs_issue_flush,
 
-	TP_PROTO(struct super_block *sb, bool nobarrier, bool flush_merge),
+       TP_PROTO(struct super_block *sb, bool nobarrier, bool flush_merge),
 
-	TP_ARGS(sb, nobarrier, flush_merge),
+       TP_ARGS(sb, nobarrier, flush_merge),
 
-	TP_STRUCT__entry(
-		__field(dev_t,	dev)
-		__field(bool, nobarrier)
-		__field(bool, flush_merge)
-	),
+       TP_STRUCT__entry(
+               __field(dev_t,  dev)
+               __field(bool, nobarrier)
+               __field(bool, flush_merge)
+       ),
 
-	TP_fast_assign(
-		__entry->dev	= sb->s_dev;
-		__entry->nobarrier = nobarrier;
-		__entry->flush_merge = flush_merge;
-	),
+       TP_fast_assign(
+               __entry->dev    = sb->s_dev;
+               __entry->nobarrier = nobarrier;
+               __entry->flush_merge = flush_merge;
+       ),
 
-	TP_printk("dev = (%d,%d), %s %s",
-		show_dev(__entry),
-		__entry->nobarrier ? "skip (nobarrier)" : "issue",
-		__entry->flush_merge ? " with flush_merge" : "")
+       TP_printk("dev = (%d,%d), %s %s",
+               show_dev(__entry),
+               __entry->nobarrier ? "skip (nobarrier)" : "issue",
+               __entry->flush_merge ? " with flush_merge" : "")
 );
+
 #endif /* _TRACE_F2FS_H */
 
  /* This part must be outside protection */
 #include <trace/define_trace.h>
-

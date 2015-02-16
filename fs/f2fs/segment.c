@@ -198,7 +198,6 @@ void f2fs_balance_fs_bg(struct f2fs_sb_info *sbi)
 
 static int issue_flush_thread(void *data)
 {
-#define test 0
 	struct f2fs_sb_info *sbi = data;
 	struct flush_cmd_control *fcc = SM_I(sbi)->cmd_control_info;
 	wait_queue_head_t *q = &fcc->flush_wait_queue;
@@ -210,7 +209,7 @@ repeat:
 	if (fcc->issue_list) {
 		fcc->dispatch_list = fcc->issue_list;
 		fcc->issue_list = fcc->issue_tail = NULL;
-	}
+ 	}
 	spin_unlock(&fcc->issue_lock);
 
 	if (fcc->dispatch_list) {

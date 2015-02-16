@@ -92,8 +92,8 @@ out:
 }
 
 static const struct vm_operations_struct f2fs_file_vm_ops = {
-	.fault        = filemap_fault,
-	.page_mkwrite = f2fs_vm_page_mkwrite,
+	.fault		= filemap_fault,
+	.page_mkwrite	= f2fs_vm_page_mkwrite,
 };
 
 static int get_parent_ino(struct inode *inode, nid_t *pino)
@@ -561,6 +561,7 @@ int f2fs_setattr(struct dentry *dentry, struct iattr *attr)
 		f2fs_android_emu(sbi, inode, &attr->ia_uid, &attr->ia_gid,
 				 &attr->ia_mode);
 
+
 	if ((attr->ia_valid & ATTR_SIZE) &&
 			attr->ia_size != i_size_read(inode)) {
 		err = f2fs_convert_inline_data(inode, attr->ia_size, NULL);
@@ -719,18 +720,18 @@ static int expand_inode_data(struct inode *inode, loff_t offset,
 	off_start = offset & (PAGE_CACHE_SIZE - 1);
 	off_end = (offset + len) & (PAGE_CACHE_SIZE - 1);
 
-	f2fs_lock_op(sbi);
+  f2fs_lock_op(sbi);
 
 	for (index = pg_start; index <= pg_end; index++) {
 		struct dnode_of_data dn;
 
-		if (index == pg_end && !off_end)
+	if (index == pg_end && !off_end)
 			goto noalloc;
-
 		set_new_dnode(&dn, inode, NULL, NULL, 0);
 		ret = f2fs_reserve_block(&dn, index);
 		if (ret)
 			break;
+
 noalloc:
 		if (pg_start == pg_end)
 			new_size = offset + len;
@@ -746,7 +747,7 @@ noalloc:
 		i_size_read(inode) < new_size) {
 		i_size_write(inode, new_size);
 		mark_inode_dirty(inode);
-		update_inode_page(inode);
+    update_inode_page(inode);
 	}
 	f2fs_unlock_op(sbi);
 
