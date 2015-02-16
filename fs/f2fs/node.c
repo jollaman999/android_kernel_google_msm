@@ -894,7 +894,6 @@ int truncate_xattr_node(struct inode *inode, struct page *page)
  */
 void remove_inode_page(struct inode *inode)
 {
-	struct f2fs_sb_info *sbi = F2FS_SB(inode->i_sb);
 	struct dnode_of_data dn;
 
 	set_new_dnode(&dn, inode, NULL, NULL, inode->i_ino);
@@ -912,10 +911,7 @@ void remove_inode_page(struct inode *inode)
 		truncate_data_blocks_range(&dn, 1);
 
 	/* 0 is possible, after f2fs_new_inode() has failed */
-	if (inode->i_blocks != 0 && inode->i_blocks != 1) {
-		f2fs_msg(sbi->sb, KERN_ERR, "after f2fs_new_inode() has failed");
-		f2fs_handle_error(sbi);
-	}
+	f2fs_bug_on(inode->i_blocks != 0 && inode->i_blocks != 1);
 
 	/* will put inode & node pages */
 	truncate_node(&dn);

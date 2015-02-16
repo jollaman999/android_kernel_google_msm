@@ -548,11 +548,12 @@ int recover_fsync_data(struct f2fs_sb_info *sbi)
 
 	/* step #2: recover data */
 	err = recover_data(sbi, &inode_list, CURSEG_WARM_NODE);
-	if (!err)
+	if (!err) {
 		if (!list_empty(&inode_list)) {
 			f2fs_handle_error(sbi);
 			err = -EIO;
 		}
+	}
 out:
 	destroy_fsync_dnodes(&inode_list);
 	kmem_cache_destroy(fsync_entry_slab);
@@ -568,6 +569,7 @@ out:
 
 	sbi->por_doing = false;
 	if (err) {
+		f2fs_msg(sbi->sb, KERN_ERR, "recovery did not fully complete");
 		discard_next_dnode(sbi, blkaddr);
 
 		/* Flush all the NAT/SIT pages */
