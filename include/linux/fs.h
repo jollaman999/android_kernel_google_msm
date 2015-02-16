@@ -2864,6 +2864,12 @@ static inline bool dir_emit(struct dir_context *ctx,
 {
 	return ctx->actor(ctx, name, namelen, ctx->pos, ino, type) == 0;
 }
+static inline bool __dir_emit(filldir_t filldir, struct file *file,
+				const char *name, int namelen,
+				u64 ino, unsigned type)
+{
+	return filldir(file, name, namelen, file->f_pos, ino, type) == 0;
+}
 static inline bool dir_emit_dot(struct file *file, struct dir_context *ctx)
 {
 	return ctx->actor(ctx, ".", 1, ctx->pos,
