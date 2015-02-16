@@ -1770,6 +1770,7 @@ struct file_operations {
 	ssize_t (*aio_write) (struct kiocb *, const struct iovec *, unsigned long, loff_t);
 	int (*iterate) (struct file *, struct dir_context *);
 	int (*readdir) (struct file *, void *, filldir_t);
+	int (*__readdir) (struct file *, struct dir_context *); // jollaman999
 	unsigned int (*poll) (struct file *, struct poll_table_struct *);
 	long (*unlocked_ioctl) (struct file *, unsigned int, unsigned long);
 	long (*compat_ioctl) (struct file *, unsigned int, unsigned long);
@@ -2863,12 +2864,6 @@ static inline bool dir_emit(struct dir_context *ctx,
 			    u64 ino, unsigned type)
 {
 	return ctx->actor(ctx, name, namelen, ctx->pos, ino, type) == 0;
-}
-static inline bool __dir_emit(filldir_t filldir, struct file *file,
-				const char *name, int namelen,
-				u64 ino, unsigned type)
-{
-	return filldir(file, name, namelen, file->f_pos, ino, type) == 0;
 }
 static inline bool dir_emit_dot(struct file *file, struct dir_context *ctx)
 {
