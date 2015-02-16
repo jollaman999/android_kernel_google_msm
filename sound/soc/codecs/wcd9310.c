@@ -52,6 +52,13 @@ static int cfilt_adjust_ms = 10;
 module_param(cfilt_adjust_ms, int, 0644);
 MODULE_PARM_DESC(cfilt_adjust_ms, "delay after adjusting cfilt voltage in ms");
 
+// intelli_plug: Force intelli_plug working when playing music while screen off
+// - jollaman999 -
+#ifdef CONFIG_INTELLI_PLUG
+bool wcd9310_is_playing;
+EXPORT_SYMBOL(wcd9310_is_playing);
+#endif
+
 #define WCD9310_RATES (SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000 |\
 			SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_48000 |\
 			SNDRV_PCM_RATE_96000 | SNDRV_PCM_RATE_192000)
@@ -4263,6 +4270,11 @@ static int tabla_startup(struct snd_pcm_substream *substream,
 	    (tabla_core->dev->parent != NULL))
 		pm_runtime_get_sync(tabla_core->dev->parent);
 
+	// intelli_plug: Force intelli_plug working when playing music while screen off
+	// - jollaman999 -
+#ifdef CONFIG_INTELLI_PLUG
+	wcd9310_is_playing = true;
+#endif
 
 	return 0;
 }
@@ -4301,6 +4313,12 @@ static void tabla_shutdown(struct snd_pcm_substream *substream,
 		pm_runtime_mark_last_busy(tabla_core->dev->parent);
 		pm_runtime_put(tabla_core->dev->parent);
 	}
+
+	// intelli_plug: Force intelli_plug working when playing music while screen off
+	// - jollaman999 -
+#ifdef CONFIG_INTELLI_PLUG
+	wcd9310_is_playing = false;
+#endif
 }
 
 int tabla_mclk_enable(struct snd_soc_codec *codec, int mclk_enable, bool dapm)
