@@ -32,6 +32,9 @@ struct msm_thermal_data {
 	uint32_t allowed_low_high;
 	uint32_t allowed_low_low;
 	uint32_t allowed_low_freq;
+
+	// Dynamic thermal control - By jollaman999
+	uint32_t dynamic_thermal_control;
 };
 
 struct msm_thermal_stat {
@@ -43,7 +46,7 @@ struct msm_thermal_stat {
     cputime64_t time_max;
 };
 
-#if defined(CONFIG_THERMAL_MONITOR) || defined(CONFIG_INTELLI_THERMAL)
+#ifdef CONFIG_THERMAL_MONITOR
 extern int msm_thermal_init(struct msm_thermal_data *pdata);
 extern int msm_thermal_device_init(void);
 #else
