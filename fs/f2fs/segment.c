@@ -274,6 +274,8 @@ repeat:
 	if (kthread_should_stop())
 		return 0;
 
+	spin_unlock(&fcc->issue_lock);
+
 	if (!llist_empty(&fcc->issue_list)) {
 		struct bio *bio = bio_alloc(GFP_NOIO, 0);
 		struct flush_cmd *cmd, *next;
@@ -313,7 +315,7 @@ int f2fs_issue_flush(struct f2fs_sb_info *sbi)
 	if (!test_opt(sbi, FLUSH_MERGE))
 		return blkdev_issue_flush(sbi->sb->s_bdev, GFP_KERNEL, NULL);
 
-	init_completion(&cmd.wait);
+	cmd.next = NULL;
 
 	llist_add(&cmd.llnode, &fcc->issue_list);
 
