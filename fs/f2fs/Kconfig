@@ -76,5 +76,5 @@ config HAVE_ARCH_SOFT_DIRTY
 	def_bool y
 	depends on F2FS_FS
 	help
-	  It needs for f2fs.
+	  It needs of f2fs.
 
