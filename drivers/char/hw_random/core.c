@@ -41,7 +41,6 @@
 #include <linux/miscdevice.h>
 #include <linux/delay.h>
 #include <linux/slab.h>
-#include <linux/random.h>
 #include <asm/uaccess.h>
 
 
@@ -305,8 +304,6 @@ int hwrng_register(struct hwrng *rng)
 {
 	int err = -EINVAL;
 	struct hwrng *old_rng, *tmp;
-	unsigned char bytes[16];
-	int bytes_read;
 
 	if (rng->name == NULL ||
 	    (rng->data_read == NULL && rng->read == NULL))
@@ -347,10 +344,6 @@ int hwrng_register(struct hwrng *rng)
 	}
 	INIT_LIST_HEAD(&rng->list);
 	list_add_tail(&rng->list, &rng_list);
-
-	bytes_read = rng_get_data(rng, bytes, sizeof(bytes), 1);
-	if (bytes_read > 0)
-		add_device_randomness(bytes, bytes_read);
 out_unlock:
 	mutex_unlock(&rng_mutex);
 out:
